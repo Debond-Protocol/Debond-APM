@@ -19,7 +19,7 @@ contract DBIT is ERC20, Ownable, AccessControl {
         _mint(_to, _amount);
     }
 
-    function supplyCollateralised() external view returns (uint) {
+    function supplyCollateralised() external pure returns (uint) {
         return 0;
     }
 
