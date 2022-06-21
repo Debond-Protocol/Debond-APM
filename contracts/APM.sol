@@ -16,7 +16,7 @@ pragma solidity ^0.8.0;
 import "./interfaces/IAPM.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "debond-governance/contracts/utils/GovernanceOwnable.sol";
+import "debond-governance-contracts/utils/GovernanceOwnable.sol";
 
 
 
@@ -28,7 +28,6 @@ contract APM is IAPM, GovernanceOwnable {
 
     mapping(address => uint256) internal totalReserve;
     mapping(address => uint256) internal totalVlp; //Vlp : virtual liquidity pool
-    //mapping(address => mapping( address => Pair) ) pairs;
     mapping(address => mapping( address => uint) ) vlp;
     address bankAddress;
 
