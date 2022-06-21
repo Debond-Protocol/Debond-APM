@@ -1,0 +1,14 @@
+{
+  "name": "debond-apm-contracts",
+  "version": "0.0.1",
+  "description": "Debond Protocol set of contracts of Automatic Pair Maker (APM Liquidity Pool)",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "info@debond.org",
+  "license": "ISC"
+}
