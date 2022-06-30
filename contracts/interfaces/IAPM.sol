@@ -42,33 +42,40 @@ interface IAPM {
      /**
     updates the composition of the VLP after adding liquidity.
     @dev only callable by bank contract.
-    @param _amountA is the amount of tokens of _tokenA in VLP.
-    @param _amountB is the amount of tokens of _tokenB in VLP
-    @param _tokenA is the address of the first tokenA with _amountA.
+    @param amount is the amount of tokens removed of the given token from the whole VLP.
+    @param token is the address of the token for which you want to update the amount.
      */
     function updateWhenRemoveLiquidity(
         uint amount, 
         address token) external;
 
     /**
-    executes the swap operation between the token0,token1 given we define the corresponding outputs (amount0Out, amount1Out) and transfer to given address.
+    executes the swap operation to swap the amounts present in VLP pool pairs.
+    @param amount0Out is the residual amount of the token0 that is not swapped (and returned to user).
+    @param amount1Out is the swapped amount from amount0Out , token0 in order to fetch the results. 
      */
     function swap(uint amount0Out, uint amount1Out,address token0, address token1, address to) external;
 
     /**
-     gets approximate amount received after swapping across VLP's defined by path , and amountIn of path[0] token.
-     used for getting the parameters  for running swap function
+     @dev gets approximate amount received after adding liquidity  across VLP's defined by path array (path[0]...path[n-1]) VLP's , and their input amount 
+     @dev used for getting the parameters  for running swap function
+     @param amountIn is the amount of tokens available for path[0] for exchanging  the tokens.
      */
 
     function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);
 
     /**
-    updates the whole reserve of given tokenAddress with amount (which is being distributed across different VLP's).
+    updates the whole reserve of given tokenAddress with amount that is added.
+    @dev
      */
     function updateTotalReserve(address tokenAddress, uint amount) external;
 
     /**
     allows the bank to remove liquidity from the consolidated pool.
+    @param onlyBank modifier MUST be used.
+    @param _to is the  address fetching the liquidity out of APM
+    @param tokenAddress is the address of token whose amount is to be withdrawn from APM.
+    @param amount is the number of tokens withdrawn from `tokenAddress`are to be removed.
      */
 
     function removeLiquidity(address _to, address tokenAddress, uint amount) external;

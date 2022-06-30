@@ -67,7 +67,7 @@ contract APM is IAPM, GovernanceOwnable {
     ) public override view returns (uint reserveA, uint reserveB) {
         (reserveA, reserveB) = (getReservesOneToken(tokenA, tokenB), getReservesOneToken(tokenB, tokenA) );
     }
-    function updateTotalReserve(address tokenAddress, uint amount) public {
+    function updateTotalReserve(address tokenAddress, uint amount) onlyBank public {
         totalReserve[tokenAddress] = totalReserve[tokenAddress] + amount;
     }
     function getVlps(address tokenA, address tokenB) public view returns (uint vlpA) {
@@ -212,7 +212,9 @@ contract APM is IAPM, GovernanceOwnable {
 
     function getAmountsOut(uint amountIn, address[] memory path) external view returns (uint[] memory amounts) {
         require(path.length >= 2, 'APM: INVALID_PATH');
+        
         amounts = new uint[](path.length);
+
         amounts[0] = amountIn;
         for (uint i; i < path.length - 1; i++) {
             (uint reserveIn, uint reserveOut) = getReserves(path[i], path[i + 1]);
@@ -223,9 +225,9 @@ contract APM is IAPM, GovernanceOwnable {
 
     // Bank Access
     function removeLiquidity(address _to, address tokenAddress, uint amount) external onlyBank {
-        // transfer
+        // withdraws the token from the APM.
         IERC20(tokenAddress).safeTransfer(_to, amount);
-        // update getReserves
+        // update getReserves  in order to stablise the VLP.
         updateWhenRemoveLiquidity(amount, tokenAddress);
     }
 }
