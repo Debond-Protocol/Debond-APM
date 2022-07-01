@@ -65,14 +65,16 @@ interface IAPM {
     function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);
 
     /**
-    updates the whole reserve of given tokenAddress with amount that is added.
-    @dev
+    updates the whole reserve of given tokenAddress when  liquidity is added.
+    @dev needs to have access only via the bank.
+    @param tokenAddress is the address of ERC20 whose liquidity is to be increased.
+    
      */
     function updateTotalReserve(address tokenAddress, uint amount) external;
 
     /**
     allows the bank to remove liquidity from the consolidated pool.
-    @param onlyBank modifier MUST be used.
+    @dev onlyBank modifier MUST be used.
     @param _to is the  address fetching the liquidity out of APM
     @param tokenAddress is the address of token whose amount is to be withdrawn from APM.
     @param amount is the number of tokens withdrawn from `tokenAddress`are to be removed.

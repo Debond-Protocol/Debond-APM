@@ -1,5 +1,4 @@
 const APM = artifacts.require("APM");
-const APMRouter = artifacts.require("APMRouter");
 
 
 module.exports = async function (deployer, networks, accounts) {
@@ -8,7 +7,6 @@ module.exports = async function (deployer, networks, accounts) {
 
   await deployer.deploy(APM, governanceAddress);
   const apmInstance = await APM.deployed();
-  await deployer.deploy(APMRouter, apmInstance.address);
   const bankInstance = await APM.deployed();
 
   await apmInstance.setBankAddress(bankInstance.address);
