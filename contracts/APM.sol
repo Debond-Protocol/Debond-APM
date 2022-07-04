@@ -27,8 +27,8 @@ contract APM is IAPM, GovernanceOwnable {
 
 
     mapping(address => uint256) internal totalReserve;
-    mapping(address => uint256) internal totalVlp; //Vlp : virtual liquidity pool
-    mapping(address => mapping( address => uint) ) vlp;
+    mapping(address => uint256) internal totalEntries; //Entries : virtual liquidity pool
+    mapping(address => mapping( address => uint) ) entry;
     address bankAddress;
 
 
@@ -55,23 +55,18 @@ contract APM is IAPM, GovernanceOwnable {
         address tokenA, //token we want to know reserve
         address tokenB //pool associated
     ) private view returns (uint reserveA) {
-        uint totalVlpA = totalVlp[tokenA]; //gas saving
-        if( totalVlpA != 0){
-            uint vlpA = vlp[tokenA][tokenB];
-            reserveA = vlpA * totalReserve[tokenA] / totalVlpA; //use mulDiv?
+        uint totalEntriesA = totalEntries[tokenA]; //gas saving
+        if( totalEntriesA != 0){
+            uint entryA = entry[tokenA][tokenB];
+            reserveA = entryA * totalReserve[tokenA] / totalEntriesA; //use mulDiv?
         }
     }
+
     function getReserves(
         address tokenA,
         address tokenB
     ) public override view returns (uint reserveA, uint reserveB) {
         (reserveA, reserveB) = (getReservesOneToken(tokenA, tokenB), getReservesOneToken(tokenB, tokenA) );
-    }
-    function updateTotalReserve(address tokenAddress, uint amount) public {
-        totalReserve[tokenAddress] = totalReserve[tokenAddress] + amount;
-    }
-    function getVlps(address tokenA, address tokenB) public view returns (uint vlpA) {
-        vlpA = vlp[tokenA][tokenB];
     }
     function updateWhenAddLiquidityOneToken(
         uint amountA,
@@ -86,19 +81,19 @@ contract APM is IAPM, GovernanceOwnable {
         uint totalReserveA = totalReserve[updateData.tokenA];//gas saving
 
         if(totalReserveA != 0){
-            //update Vlp
-            uint oldVlpA = vlp[tokenA][tokenB];  //for update total vlp
-            uint totalVlpA = totalVlp[updateData.tokenA]; //save gas
+            //update entry
+            uint oldEntryA = entry[tokenA][tokenB];  //for update total Entry
+            uint totalEntryA = totalEntries[updateData.tokenA]; //save gas
 
-            uint vlpA = amountToAddVlp(oldVlpA, updateData.amountA, totalVlpA, totalReserveA);
-            vlp[tokenA][tokenB] = vlpA;
+            uint entryA = amountToAddEntry(oldEntryA, updateData.amountA, totalEntryA, totalReserveA);
+            entry[tokenA][tokenB] = entryA;
 
-            //update total vlp
-            totalVlp[updateData.tokenA] = totalVlpA - oldVlpA + vlpA;
+            //update total Entry
+            totalEntries[updateData.tokenA] = totalEntryA - oldEntryA + entryA;
         }
         else {
-            vlp[tokenA][tokenB] = amountA;
-            totalVlp[updateData.tokenA] = updateData.amountA;
+            entry[tokenA][tokenB] = amountA;
+            totalEntries[updateData.tokenA] = updateData.amountA;
         }
         totalReserve[updateData.tokenA] = totalReserveA + updateData.amountA;
     }
@@ -122,19 +117,19 @@ contract APM is IAPM, GovernanceOwnable {
         uint totalReserveA = totalReserve[updateData.tokenA];//gas saving
 
         if(totalReserveA != 0){
-            //update Vlp
-            uint oldVlpA = vlp[tokenA][tokenB];  //for update total vlp
-            uint totalVlpA = totalVlp[updateData.tokenA]; //save gas
+            //update Entry
+            uint oldEntryA = entry[tokenA][tokenB];  //for update total entry
+            uint totalEntryA = totalEntries[updateData.tokenA]; //save gas
 
-            uint vlpA = amountToRemoveVlp(oldVlpA, updateData.amountA, totalVlpA, totalReserveA);
-            vlp[tokenA][tokenB] = vlpA;
+            uint entryA = amountToRemoveEntry(oldEntryA, updateData.amountA, totalEntryA, totalReserveA);
+            entry[tokenA][tokenB] = entryA;
 
-            //update total vlp
-            totalVlp[updateData.tokenA] = totalVlpA - oldVlpA + vlpA;
+            //update total Entry
+            totalEntries[updateData.tokenA] = totalEntryA - oldEntryA + entryA;
         }
         else {
-            vlp[tokenA][tokenB] = amountA;
-            totalVlp[updateData.tokenA] = updateData.amountA;
+            entry[tokenA][tokenB] = amountA;
+            totalEntries[updateData.tokenA] = updateData.amountA;
         }
         totalReserve[updateData.tokenA] = totalReserveA - updateData.amountA;
     }
@@ -154,11 +149,11 @@ contract APM is IAPM, GovernanceOwnable {
         updateWhenAddLiquidityOneToken(amountAAdded, tokenA, tokenB);
         updateWhenRemoveLiquidityOneToken(amountBWithdrawn, tokenB, tokenA);
     }
-    function amountToAddVlp(uint oldVlp, uint amount, uint totalVlpToken, uint totalReserveToken) public pure returns (uint newVlp) {
-        newVlp = oldVlp + amount * totalVlpToken / totalReserveToken;
+    function amountToAddEntry(uint oldEntry, uint amount, uint totalEntryToken, uint totalReserveToken) public pure returns (uint newEntry) {
+        newEntry = oldEntry + amount * totalEntryToken / totalReserveToken;
     }
-    function amountToRemoveVlp(uint oldVlp, uint amount, uint totalVlpToken, uint totalReserveToken) public pure returns (uint newVlp) {
-        newVlp = oldVlp - amount * totalVlpToken / totalReserveToken;
+    function amountToRemoveEntry(uint oldEntry, uint amount, uint totalEntryToken, uint totalReserveToken) public pure returns (uint newEntry) {
+        newEntry = oldEntry - amount * totalEntryToken / totalReserveToken;
     }
     struct SwapData { //to avoid stack too deep error
         uint totalReserve0;
