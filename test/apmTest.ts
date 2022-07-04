@@ -23,8 +23,6 @@ contract('APM', async (accounts: string[]) => {
         usdtContract = await USDT.deployed();
         dbitContract = await DBIT.deployed();
         apmContract = (await APM.deployed());
-
-        await apmContract.setBankAddress(accounts[1]);
     })
 
     it('update add liquidity', async () => {
