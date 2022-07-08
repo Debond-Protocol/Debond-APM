@@ -2,7 +2,7 @@ pragma solidity ^0.8.0;
 
 // SPDX-License-Identifier: apache 2.0
 /*
-    Copyright 2020 Sigmoid Foundation <info@SGM.finance>
+    Copyright 2022 Debond Protocol <info@debond.org>
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
@@ -28,7 +28,7 @@ contract APM is IAPM, GovernanceOwnable {
 
     mapping(address => uint256) internal totalReserve;
     mapping(address => uint256) internal totalEntries; //Entries : virtual liquidity pool
-    mapping(address => mapping( address => uint) ) entry;
+    mapping(address => mapping( address => uint) ) entries;
     address bankAddress;
 
 
@@ -57,8 +57,8 @@ contract APM is IAPM, GovernanceOwnable {
     ) private view returns (uint reserveA) {
         uint totalEntriesA = totalEntries[tokenA]; //gas saving
         if( totalEntriesA != 0){
-            uint entryA = entry[tokenA][tokenB];
-            reserveA = entryA * totalReserve[tokenA] / totalEntriesA; //use mulDiv?
+            uint entriesA = entries[tokenA][tokenB];
+            reserveA = entriesA * totalReserve[tokenA] / totalEntriesA; //use mulDiv?
         }
     }
 
@@ -81,18 +81,18 @@ contract APM is IAPM, GovernanceOwnable {
         uint totalReserveA = totalReserve[updateData.tokenA];//gas saving
 
         if(totalReserveA != 0){
-            //update entry
-            uint oldEntryA = entry[tokenA][tokenB];  //for update total Entry
-            uint totalEntryA = totalEntries[updateData.tokenA]; //save gas
+            //update entries
+            uint oldEntriesA = entries[tokenA][tokenB];  //for updating total Entries
+            uint totalEntriesA = totalEntries[updateData.tokenA]; //save gas
 
-            uint entryA = amountToAddEntry(oldEntryA, updateData.amountA, totalEntryA, totalReserveA);
-            entry[tokenA][tokenB] = entryA;
+            uint entriesA = entriesAfterAddingLiq(oldEntriesA, updateData.amountA, totalEntriesA, totalReserveA);
+            entries[tokenA][tokenB] = entriesA;
 
-            //update total Entry
-            totalEntries[updateData.tokenA] = totalEntryA - oldEntryA + entryA;
+            //update total Entries
+            totalEntries[updateData.tokenA] = totalEntriesA - oldEntriesA + entriesA;
         }
         else {
-            entry[tokenA][tokenB] = amountA;
+            entries[tokenA][tokenB] = amountA;
             totalEntries[updateData.tokenA] = updateData.amountA;
         }
         totalReserve[updateData.tokenA] = totalReserveA + updateData.amountA;
@@ -117,18 +117,18 @@ contract APM is IAPM, GovernanceOwnable {
         uint totalReserveA = totalReserve[updateData.tokenA];//gas saving
 
         if(totalReserveA != 0){
-            //update Entry
-            uint oldEntryA = entry[tokenA][tokenB];  //for update total entry
-            uint totalEntryA = totalEntries[updateData.tokenA]; //save gas
+            //update Entries
+            uint oldEntriesA = entries[tokenA][tokenB];  //for updating total entries
+            uint totalEntriesA = totalEntries[updateData.tokenA]; //save gas
 
-            uint entryA = amountToRemoveEntry(oldEntryA, updateData.amountA, totalEntryA, totalReserveA);
-            entry[tokenA][tokenB] = entryA;
+            uint entriesA = entriesAfterRemovingLiq(oldEntriesA, updateData.amountA, totalEntriesA, totalReserveA);
+            entries[tokenA][tokenB] = entriesA;
 
-            //update total Entry
-            totalEntries[updateData.tokenA] = totalEntryA - oldEntryA + entryA;
+            //update total Entries
+            totalEntries[updateData.tokenA] = totalEntriesA - oldEntriesA + entriesA;
         }
         else {
-            entry[tokenA][tokenB] = amountA;
+            entries[tokenA][tokenB] = amountA;
             totalEntries[updateData.tokenA] = updateData.amountA;
         }
         totalReserve[updateData.tokenA] = totalReserveA - updateData.amountA;
@@ -149,11 +149,11 @@ contract APM is IAPM, GovernanceOwnable {
         updateWhenAddLiquidityOneToken(amountAAdded, tokenA, tokenB);
         updateWhenRemoveLiquidityOneToken(amountBWithdrawn, tokenB, tokenA);
     }
-    function amountToAddEntry(uint oldEntry, uint amount, uint totalEntryToken, uint totalReserveToken) public pure returns (uint newEntry) {
-        newEntry = oldEntry + amount * totalEntryToken / totalReserveToken;
+    function entriesAfterAddingLiq(uint oldEntries, uint amount, uint totalEntriesToken, uint totalReserveToken) public pure returns (uint newEntries) {
+        newEntries = oldEntries + amount * totalEntriesToken / totalReserveToken;
     }
-    function amountToRemoveEntry(uint oldEntry, uint amount, uint totalEntryToken, uint totalReserveToken) public pure returns (uint newEntry) {
-        newEntry = oldEntry - amount * totalEntryToken / totalReserveToken;
+    function entriesAfterRemovingLiq(uint oldEntries, uint amount, uint totalEntriesToken, uint totalReserveToken) public pure returns (uint newEntries) {
+        newEntries = oldEntries - amount * totalEntriesToken / totalReserveToken;
     }
     struct SwapData { //to avoid stack too deep error
         uint totalReserve0;
