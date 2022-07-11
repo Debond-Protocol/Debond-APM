@@ -88,7 +88,4 @@ contract('APM', async (accounts: string[]) => {
         expect(usdtBalance).to.equal('100');
         expect(dbitBalance).to.equal('10000');
     })
-
-    it('writing the ')
-
 });

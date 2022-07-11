@@ -18,16 +18,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "debond-governance-contracts/utils/GovernanceOwnable.sol";
 
-
-
-
 contract APM is IAPM, GovernanceOwnable {
 
     using SafeERC20 for IERC20;
-
-
     mapping(address => uint256) internal totalReserve;
-    mapping(address => uint256) internal totalVlp; //Vlp : virtual liquidity pool
+    mapping(address => uint256) internal totalVlp; //
     mapping(address => mapping( address => uint) ) vlp;
     address bankAddress;
 
