@@ -22,12 +22,15 @@ contract APM is IAPM, GovernanceOwnable {
 
     using SafeERC20 for IERC20;
     mapping(address => uint256) internal totalReserve;
-    mapping(address => uint256) internal totalVlp; //
+    mapping(address => uint256) internal totalVlp; //Vlp : virtual liquidity pool
     mapping(address => mapping( address => uint) ) vlp;
     address bankAddress;
 
-
-    struct UpdateData { //to avoid stack too deep error
+    /**
+    struct for initializing the add/ remove liquidity operations.
+    added to avoid the stack insignificant error.
+     */
+    struct UpdateData { 
         uint amountA;
         uint amountB;
         address tokenA;
@@ -101,7 +104,7 @@ contract APM is IAPM, GovernanceOwnable {
         uint amountA,
         uint amountB,
         address tokenA,
-        address tokenB) external onlyBank { //TODO : restrict update functions for bank only, using assert/require and not modifiers
+        address tokenB) external onlyBank { 
         updateWhenAddLiquidityOneToken(amountA, tokenA, tokenB);
         updateWhenAddLiquidityOneToken(amountB, tokenB, tokenA);
     }
