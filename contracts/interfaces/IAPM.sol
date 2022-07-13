@@ -2,7 +2,7 @@ pragma solidity ^0.8.0;
 
 // SPDX-License-Identifier: apache 2.0
 /*
-    Copyright 2020 Sigmoid Foundation <info@SGM.finance>
+    Copyright 2022 Debond Protocol <info@debond.org>
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
@@ -60,24 +60,6 @@ interface IAPM {
      @dev gets approximate amount received after adding liquidity  across VLP's defined by path array (path[0]...path[n-1]) VLP's , and their input amount 
      @dev used for getting the parameters  for running swap function
      @param amountIn is the amount of tokens available for path[0] for exchanging  the tokens.
-     */
-
-    function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);
-
-    /**
-    updates the whole reserve of given tokenAddress when  liquidity is added.
-    @dev needs to have access only via the bank.
-    @param tokenAddress is the address of ERC20 whose liquidity is to be increased.
-    
-     */
-    function updateTotalReserve(address tokenAddress, uint amount) external;
-
-    /**
-    allows the bank to remove liquidity from the consolidated pool.
-    @dev onlyBank modifier MUST be used.
-    @param _to is the  address fetching the liquidity out of APM
-    @param tokenAddress is the address of token whose amount is to be withdrawn from APM.
-    @param amount is the number of tokens withdrawn from `tokenAddress`are to be removed.
      */
 
     function removeLiquidity(address _to, address tokenAddress, uint amount) external;

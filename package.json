@@ -14,7 +14,7 @@
   "dependencies": {
     "@openzeppelin/contracts": "^4.5.0",
     "debond-bank": "github:Debond-Protocol/Debond-Bank",
-    "debond-governance-contracts": "^0.0.1",
+    "debond-governance-contracts": "https://github.com/Debond-Protocol/Debond-Governance.git",
     "dotenv": "^16.0.0"
   },
   "devDependencies": {

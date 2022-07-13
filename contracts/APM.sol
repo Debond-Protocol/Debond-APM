@@ -2,7 +2,7 @@ pragma solidity ^0.8.0;
 
 // SPDX-License-Identifier: apache 2.0
 /*
-    Copyright 2020 Sigmoid Foundation <info@SGM.finance>
+    Copyright 2022 Debond Protocol <info@debond.org>
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
@@ -16,14 +16,14 @@ pragma solidity ^0.8.0;
 import "./interfaces/IAPM.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "debond-governance-contracts/utils/GovernanceOwnable.sol";
+import "debond-governance-contracts/contracts/utils/GovernanceOwnable.sol";
 
 contract APM is IAPM, GovernanceOwnable {
 
     using SafeERC20 for IERC20;
     mapping(address => uint256) internal totalReserve;
-    mapping(address => uint256) internal totalVlp; //Vlp : virtual liquidity pool
-    mapping(address => mapping( address => uint) ) vlp;
+    mapping(address => uint256) internal totalEntries; //Entries : virtual liquidity pool
+    mapping(address => mapping( address => uint) ) entries;
     address bankAddress;
 
     /**
@@ -53,23 +53,18 @@ contract APM is IAPM, GovernanceOwnable {
         address tokenA, //token we want to know reserve
         address tokenB //pool associated
     ) private view returns (uint reserveA) {
-        uint totalVlpA = totalVlp[tokenA]; //gas saving
-        if( totalVlpA != 0){
-            uint vlpA = vlp[tokenA][tokenB];
-            reserveA = vlpA * totalReserve[tokenA] / totalVlpA; //use mulDiv?
+        uint totalEntriesA = totalEntries[tokenA]; //gas saving
+        if( totalEntriesA != 0){
+            uint entriesA = entries[tokenA][tokenB];
+            reserveA = entriesA * totalReserve[tokenA] / totalEntriesA; //use mulDiv?
         }
     }
+
     function getReserves(
         address tokenA,
         address tokenB
     ) public override view returns (uint reserveA, uint reserveB) {
         (reserveA, reserveB) = (getReservesOneToken(tokenA, tokenB), getReservesOneToken(tokenB, tokenA) );
-    }
-    function updateTotalReserve(address tokenAddress, uint amount) onlyBank public {
-        totalReserve[tokenAddress] = totalReserve[tokenAddress] + amount;
-    }
-    function getVlps(address tokenA, address tokenB) public view returns (uint vlpA) {
-        vlpA = vlp[tokenA][tokenB];
     }
     function updateWhenAddLiquidityOneToken(
         uint amountA,
@@ -84,19 +79,19 @@ contract APM is IAPM, GovernanceOwnable {
         uint totalReserveA = totalReserve[updateData.tokenA];//gas saving
 
         if(totalReserveA != 0){
-            //update Vlp
-            uint oldVlpA = vlp[tokenA][tokenB];  //for update total vlp
-            uint totalVlpA = totalVlp[updateData.tokenA]; //save gas
+            //update entries
+            uint oldEntriesA = entries[tokenA][tokenB];  //for updating total Entries
+            uint totalEntriesA = totalEntries[updateData.tokenA]; //save gas
 
-            uint vlpA = amountToAddVlp(oldVlpA, updateData.amountA, totalVlpA, totalReserveA);
-            vlp[tokenA][tokenB] = vlpA;
+            uint entriesA = entriesAfterAddingLiq(oldEntriesA, updateData.amountA, totalEntriesA, totalReserveA);
+            entries[tokenA][tokenB] = entriesA;
 
-            //update total vlp
-            totalVlp[updateData.tokenA] = totalVlpA - oldVlpA + vlpA;
+            //update total Entries
+            totalEntries[updateData.tokenA] = totalEntriesA - oldEntriesA + entriesA;
         }
         else {
-            vlp[tokenA][tokenB] = amountA;
-            totalVlp[updateData.tokenA] = updateData.amountA;
+            entries[tokenA][tokenB] = amountA;
+            totalEntries[updateData.tokenA] = updateData.amountA;
         }
         totalReserve[updateData.tokenA] = totalReserveA + updateData.amountA;
     }
@@ -120,19 +115,19 @@ contract APM is IAPM, GovernanceOwnable {
         uint totalReserveA = totalReserve[updateData.tokenA];//gas saving
 
         if(totalReserveA != 0){
-            //update Vlp
-            uint oldVlpA = vlp[tokenA][tokenB];  //for update total vlp
-            uint totalVlpA = totalVlp[updateData.tokenA]; //save gas
+            //update Entries
+            uint oldEntriesA = entries[tokenA][tokenB];  //for updating total entries
+            uint totalEntriesA = totalEntries[updateData.tokenA]; //save gas
 
-            uint vlpA = amountToRemoveVlp(oldVlpA, updateData.amountA, totalVlpA, totalReserveA);
-            vlp[tokenA][tokenB] = vlpA;
+            uint entriesA = entriesAfterRemovingLiq(oldEntriesA, updateData.amountA, totalEntriesA, totalReserveA);
+            entries[tokenA][tokenB] = entriesA;
 
-            //update total vlp
-            totalVlp[updateData.tokenA] = totalVlpA - oldVlpA + vlpA;
+            //update total Entries
+            totalEntries[updateData.tokenA] = totalEntriesA - oldEntriesA + entriesA;
         }
         else {
-            vlp[tokenA][tokenB] = amountA;
-            totalVlp[updateData.tokenA] = updateData.amountA;
+            entries[tokenA][tokenB] = amountA;
+            totalEntries[updateData.tokenA] = updateData.amountA;
         }
         totalReserve[updateData.tokenA] = totalReserveA - updateData.amountA;
     }
@@ -152,11 +147,11 @@ contract APM is IAPM, GovernanceOwnable {
         updateWhenAddLiquidityOneToken(amountAAdded, tokenA, tokenB);
         updateWhenRemoveLiquidityOneToken(amountBWithdrawn, tokenB, tokenA);
     }
-    function amountToAddVlp(uint oldVlp, uint amount, uint totalVlpToken, uint totalReserveToken) public pure returns (uint newVlp) {
-        newVlp = oldVlp + amount * totalVlpToken / totalReserveToken;
+    function entriesAfterAddingLiq(uint oldEntries, uint amount, uint totalEntriesToken, uint totalReserveToken) public pure returns (uint newEntries) {
+        newEntries = oldEntries + amount * totalEntriesToken / totalReserveToken;
     }
-    function amountToRemoveVlp(uint oldVlp, uint amount, uint totalVlpToken, uint totalReserveToken) public pure returns (uint newVlp) {
-        newVlp = oldVlp - amount * totalVlpToken / totalReserveToken;
+    function entriesAfterRemovingLiq(uint oldEntries, uint amount, uint totalEntriesToken, uint totalReserveToken) public pure returns (uint newEntries) {
+        newEntries = oldEntries - amount * totalEntriesToken / totalReserveToken;
     }
     struct SwapData { //to avoid stack too deep error
         uint totalReserve0;

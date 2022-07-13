@@ -3,7 +3,7 @@
 ## Debond-APM.
 ### About: 
 
-This module consist of smart contract for Automated Pair Maker, which acts as the single consolidated pool for ERC20 tokens represented by bonds whenever they are issued / redeemed. It manages the liquidity of the  different bond pairs internally (called as virtual liquidity pool) rather than issuing seperate contracts each time the LP is created.
+This module consist of smart contract for Automated Pair Maker, which acts as the single consolidated pool for ERC20 tokens represented by bonds whenever they are issued / redeemed. It manages the liquidity of the  different bond pairs internally (called as virtual liquidity pool) rather than issuing separate contracts each time the LP is created.
 
 The addition/removal of the liquidity of the pool (done via bank ),after they are issued the bond defining the transaction. Along with that it also allows swaps between the different virtual pool pairs between the bond,nonce classes being validated (as purchaseable) by the banks.
 
@@ -20,14 +20,14 @@ The addition/removal of the liquidity of the pool (done via bank ),after they ar
 
 
 ## Development workflow: 
-1. Bank contract calls the APMRouter.swapExactTokensWithTokens or  function to either mint the  .
+1. Bank contract calls the `APMRouter.UpdateWhenAddLiquidity/APMRouter.RemoveLiquidity` or  `swapTokensForExactTokens` function to manage the operations of bond liquidity and swapping.
 
 2. then internally it calls the  `APM.updateWhenAddLiquidityOneToken() / updateLiquidity()` (based on the type of bond added) function that checks whether there is LP available there, if not it initializes the pair and then updates the liquidity of the virtual pair as well as the whole pool.
 
-3. Similarly during the redemption of the bond: the  UI  interacts with the Bank.redeem..with..() to redeem the bonds (via burning) along with internally calling the `updateWhenRemoveLiquidityOneToken() / updateliquidity()` function that will be updating the overall liquidity along with the VLP.
+3. Similarly during the redemption of the bond: the  UI  interacts with the Bank.redeem..with..() to redeem the bonds (via burning) along with internally calling the `APMRouter.updateWhenRemoveLiquidityOneToken() / updateliquidity()` function that will be updating the overall liquidity along with the VLP.
 
 ### Security consideration.
-**NOTE: Anyone can put the liquidity in the APM without going through the traditional process of issuing bonds on the bank, its MUST NOT be followed as you will LOOSE THE FUNDS as there are no  methods to remove liquidity unless users via   banks have to redeem the bond corresponding to liquidity **
+**NOTE:Anyone can put the liquidity in the APM without going through the traditional process of issuing bonds on the bank, its MUST NOT be followed as you will LOOSE THE FUNDS as there are no methods to remove liquidity unless users via banks have to redeem the bond corresponding to liquidity **
 
 
 ## reports: 
