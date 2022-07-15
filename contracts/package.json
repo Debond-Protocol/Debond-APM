@@ -1,7 +1,7 @@
 {
-  "name": "debond-apm-contracts",
-  "version": "0.0.2",
-  "description": "Debond Protocol set of contracts of Automatic Pair Maker (APM Liquidity Pool)",
+  "name": "@debond-protocol/debond-apm-contracts",
+  "version": "0.0.1",
+  "description": "Debond Automated Pair Maker Contracts",
   "main": "index.js",
   "directories": {
     "test": "test"
@@ -9,6 +9,19 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "info@debond.org",
-  "license": "ISC"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Debond-Protocol/Debond-APM.git"
+  },
+  "keywords": [
+    "debond",
+    "protocol",
+    "apm"
+  ],
+  "author": "Debond Protocol <info@debond.org>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Debond-Protocol/Debond-APM/issues"
+  },
+  "homepage": "https://github.com/Debond-Protocol/Debond-APM#readme"
 }
