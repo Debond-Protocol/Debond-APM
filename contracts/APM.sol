@@ -131,28 +131,26 @@ contract APM is IAPM, GovernanceOwnable {
 
         uint256 totalReserveA = totalReserve[updateData.tokenA]; //gas saving
 
-        if (totalReserveA != 0) {
-            //update Entries
-            uint256 oldEntriesA = entries[tokenA][tokenB]; //for updating total entries
-            uint256 totalEntriesA = totalEntries[updateData.tokenA]; //save gas
+        
+        //update Entries
+        uint256 oldEntriesA = entries[tokenA][tokenB]; //for updating total entries
+        uint256 totalEntriesA = totalEntries[updateData.tokenA]; //save gas
 
-            uint256 entriesA = entriesAfterRemovingLiq(
-                oldEntriesA,
-                updateData.amountA,
-                totalEntriesA,
-                totalReserveA
-            );
-            entries[tokenA][tokenB] = entriesA;
+        uint256 entriesA = entriesAfterRemovingLiq(
+            oldEntriesA,
+            updateData.amountA,
+            totalEntriesA,
+            totalReserveA
+        );
+        entries[tokenA][tokenB] = entriesA;
 
-            //update total Entries
-            totalEntries[updateData.tokenA] =
-                totalEntriesA -
-                oldEntriesA +
-                entriesA;
-        } else {
-            entries[tokenA][tokenB] = amountA;
-            totalEntries[updateData.tokenA] = updateData.amountA;
-        }
+        //update total Entries
+        totalEntries[updateData.tokenA] =
+            totalEntriesA -
+            oldEntriesA +
+            entriesA;
+        
+        //update total Reserve
         totalReserve[updateData.tokenA] = totalReserveA - updateData.amountA;
     }
 
