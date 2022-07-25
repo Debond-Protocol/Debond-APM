@@ -311,4 +311,14 @@ contract APM is IAPM, GovernanceOwnable {
         // update getReserves
         updateWhenRemoveLiquidity(amount, tokenAddress);
     }
+
+    // Gov Access
+    function removeLiquidityGovernance(
+        address _to,
+        address tokenAddress,
+        uint256 amount
+    ) external onlyGovernance {
+        IERC20(tokenAddress).safeTransfer(_to, amount);
+        updateWhenRemoveLiquidity(amount, tokenAddress);
+    }
 }
