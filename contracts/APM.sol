@@ -231,8 +231,8 @@ contract APM is IAPM, GovernanceOwnable {
             "APM swap: INSUFFICIENT_LIQUIDITY"
         );
 
-        if (amount0Out == 0) IERC20(token1).transfer(to, amount1Out);
-        else IERC20(token0).transfer(to, amount0Out);
+        if (amount0Out == 0) IERC20(token1).safeTransfer(to, amount1Out);
+        else IERC20(token0).safeTransfer(to, amount0Out);
 
         SwapData memory swapData;
 
