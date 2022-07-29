@@ -77,32 +77,32 @@ contract APM is IAPM, GovernanceOwnable {
         address tokenB
     ) private {
 
-        uint256 totalReserveA = totalReserve[ tokenA]; //todo : should be put totalreserve[tokenA] or IERC20(tokenA).balanceOf(address(this)) ?
+        uint256 totalReserveA = totalReserve[tokenA]; //todo : should be put totalreserve[tokenA] or IERC20(tokenA).balanceOf(address(this)) ?
 
         if (totalReserveA != 0) {
             //update entries
             uint256 oldEntriesA = entries[tokenA][tokenB]; //for updating total Entries
-            uint256 totalEntriesA = totalEntries[ tokenA]; //save gas
+            uint256 totalEntriesA = totalEntries[tokenA]; //save gas
 
             uint256 entriesA = _entriesAfterAddingLiq(
                 oldEntriesA,
-                 amountA,
+                amountA,
                 totalEntriesA,
                 totalReserveA
             );
             entries[tokenA][tokenB] = entriesA;
 
             //update total Entries
-            totalEntries[ tokenA] =
+            totalEntries[tokenA] =
                 totalEntriesA -
                 oldEntriesA +
                 entriesA;
         } else {
-            entries[tokenA][tokenB] =  amountA;
-            totalEntries[ tokenA] =  amountA;
+            entries[tokenA][tokenB] = amountA;
+            totalEntries[tokenA] = amountA;
         }
         //sync( tokenA);
-        totalReserve[ tokenA] = totalReserveA +  amountA;  //we replaced this by sync
+        totalReserve[tokenA] = totalReserveA + amountA;  //we replaced this by sync
     }
 
     function updateWhenAddLiquidity(
@@ -121,30 +121,30 @@ contract APM is IAPM, GovernanceOwnable {
         address tokenB
     ) private {
 
-        uint256 totalReserveA = totalReserve[ tokenA]; //gas saving
+        uint256 totalReserveA = totalReserve[tokenA]; //gas saving
 
         
         //update Entries
         uint256 oldEntriesA = entries[tokenA][tokenB]; //for updating total entries
-        uint256 totalEntriesA = totalEntries[ tokenA]; //save gas
+        uint256 totalEntriesA = totalEntries[tokenA]; //save gas
 
         uint256 entriesA = _entriesAfterRemovingLiq(
             oldEntriesA,
-             amountA,
+            amountA,
             totalEntriesA,
             totalReserveA
         );
         entries[tokenA][tokenB] = entriesA;
 
         //update total Entries
-        totalEntries[ tokenA] =
+        totalEntries[tokenA] =
             totalEntriesA -
             oldEntriesA +
             entriesA;
         
         //update total Reserve
-        //totalReserve[ tokenA] = totalReserveA -  amountA; //we replaced this by sync
-        sync( tokenA);
+        totalReserve[tokenA] = totalReserveA -  amountA; //we replaced this by sync
+        //sync(tokenA);
     }
 
     function updateWhenRemoveLiquidity(
@@ -204,7 +204,7 @@ contract APM is IAPM, GovernanceOwnable {
         unlocked = 0;
         require(
             (amount0Out != 0 && amount1Out == 0) ||
-                (amount0Out == 0 && amount1Out != 0),
+            (amount0Out == 0 && amount1Out != 0),
             "APM swap: INSUFFICIENT_OUTPUT_AMOUNT_Or_Both_output >0"
         );
         require(to != token0 && to != token1, "APM swap: INVALID_TO"); // do we really need this?
@@ -221,32 +221,32 @@ contract APM is IAPM, GovernanceOwnable {
          uint totalReserve1 = IERC20(token1).balanceOf(address(this));
          uint currentReserve0 =
             _reserve0 +
-             totalReserve0 -
+            totalReserve0 -
             totalReserve[token0]; // should be >= 0
          uint currentReserve1 =
             _reserve1 +
-             totalReserve1 -
+            totalReserve1 -
             totalReserve[token1];
         require(
-             currentReserve0 *  currentReserve1 >=
-                _reserve0 * _reserve1,
+            currentReserve0 * currentReserve1 >=
+            _reserve0 * _reserve1,
             "APM swap: K"
         );
 
-         uint amount0In =  currentReserve0 > _reserve0 - amount0Out
-            ?  currentReserve0 - (_reserve0 - amount0Out)
+         uint amount0In = currentReserve0 > _reserve0 - amount0Out
+            ? currentReserve0 - (_reserve0 - amount0Out)
             : 0;
-         uint amount1In =  currentReserve1 > _reserve1 - amount1Out
-            ?  currentReserve1 - (_reserve1 - amount1Out)
+         uint amount1In = currentReserve1 > _reserve1 - amount1Out
+            ? currentReserve1 - (_reserve1 - amount1Out)
             : 0;
         require(
-             amount0In > 0 ||  amount1In > 0,
+            amount0In > 0 || amount1In > 0,
             "APM swap: INSUFFICIENT_INPUT_AMOUNT"
         );
         if (amount0Out == 0) {
-            _updateWhenSwap( amount0In, amount1Out, token0, token1);
+            _updateWhenSwap(amount0In, amount1Out, token0, token1);
         } else {
-            _updateWhenSwap( amount1In, amount0Out, token1, token0);
+            _updateWhenSwap(amount1In, amount0Out, token1, token0);
         }
         unlocked = 1;
     }
