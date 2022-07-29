@@ -76,36 +76,33 @@ contract APM is IAPM, GovernanceOwnable {
         address tokenA,
         address tokenB
     ) private {
-        UpdateData memory updateData;
-        updateData.amountA = amountA;
-        updateData.tokenA = tokenA;
-        updateData.tokenB = tokenB;
 
-        uint256 totalReserveA = totalReserve[updateData.tokenA]; //gas saving
+        uint256 totalReserveA = totalReserve[ tokenA]; //todo : should be put totalreserve[tokenA] or IERC20(tokenA).balanceOf(address(this)) ?
 
         if (totalReserveA != 0) {
             //update entries
             uint256 oldEntriesA = entries[tokenA][tokenB]; //for updating total Entries
-            uint256 totalEntriesA = totalEntries[updateData.tokenA]; //save gas
+            uint256 totalEntriesA = totalEntries[ tokenA]; //save gas
 
             uint256 entriesA = _entriesAfterAddingLiq(
                 oldEntriesA,
-                updateData.amountA,
+                 amountA,
                 totalEntriesA,
                 totalReserveA
             );
             entries[tokenA][tokenB] = entriesA;
 
             //update total Entries
-            totalEntries[updateData.tokenA] =
+            totalEntries[ tokenA] =
                 totalEntriesA -
                 oldEntriesA +
                 entriesA;
         } else {
-            entries[tokenA][tokenB] = amountA;
-            totalEntries[updateData.tokenA] = updateData.amountA;
+            entries[tokenA][tokenB] =  amountA;
+            totalEntries[ tokenA] =  amountA;
         }
-        totalReserve[updateData.tokenA] = totalReserveA + updateData.amountA;
+        //sync( tokenA);
+        totalReserve[ tokenA] = totalReserveA +  amountA;  //we replaced this by sync
     }
 
     function updateWhenAddLiquidity(
@@ -123,34 +120,31 @@ contract APM is IAPM, GovernanceOwnable {
         address tokenA,
         address tokenB
     ) private {
-        UpdateData memory updateData;
-        updateData.amountA = amountA;
-        updateData.tokenA = tokenA;
-        updateData.tokenB = tokenB;
 
-        uint256 totalReserveA = totalReserve[updateData.tokenA]; //gas saving
+        uint256 totalReserveA = totalReserve[ tokenA]; //gas saving
 
         
         //update Entries
         uint256 oldEntriesA = entries[tokenA][tokenB]; //for updating total entries
-        uint256 totalEntriesA = totalEntries[updateData.tokenA]; //save gas
+        uint256 totalEntriesA = totalEntries[ tokenA]; //save gas
 
         uint256 entriesA = _entriesAfterRemovingLiq(
             oldEntriesA,
-            updateData.amountA,
+             amountA,
             totalEntriesA,
             totalReserveA
         );
         entries[tokenA][tokenB] = entriesA;
 
         //update total Entries
-        totalEntries[updateData.tokenA] =
+        totalEntries[ tokenA] =
             totalEntriesA -
             oldEntriesA +
             entriesA;
         
         //update total Reserve
-        totalReserve[updateData.tokenA] = totalReserveA - updateData.amountA;
+        //totalReserve[ tokenA] = totalReserveA -  amountA; //we replaced this by sync
+        sync( tokenA);
     }
 
     function updateWhenRemoveLiquidity(
@@ -196,16 +190,6 @@ contract APM is IAPM, GovernanceOwnable {
             totalReserveToken;
     }
 
-    struct SwapData {
-        //to avoid stack too deep error
-        uint256 totalReserve0;
-        uint256 totalReserve1;
-        uint256 currentReserve0;
-        uint256 currentReserve1;
-        uint256 amount0In;
-        uint256 amount1In;
-    }
-
     uint256 private unlocked = 1; //reentracy
 
     function swap(
@@ -233,38 +217,36 @@ contract APM is IAPM, GovernanceOwnable {
         if (amount0Out == 0) IERC20(token1).safeTransfer(to, amount1Out);
         else IERC20(token0).safeTransfer(to, amount0Out);
 
-        SwapData memory swapData;
-
-        swapData.totalReserve0 = IERC20(token0).balanceOf(address(this));
-        swapData.totalReserve1 = IERC20(token1).balanceOf(address(this));
-        swapData.currentReserve0 =
+         uint totalReserve0 = IERC20(token0).balanceOf(address(this));
+         uint totalReserve1 = IERC20(token1).balanceOf(address(this));
+         uint currentReserve0 =
             _reserve0 +
-            swapData.totalReserve0 -
+             totalReserve0 -
             totalReserve[token0]; // should be >= 0
-        swapData.currentReserve1 =
+         uint currentReserve1 =
             _reserve1 +
-            swapData.totalReserve1 -
+             totalReserve1 -
             totalReserve[token1];
         require(
-            swapData.currentReserve0 * swapData.currentReserve1 >=
+             currentReserve0 *  currentReserve1 >=
                 _reserve0 * _reserve1,
             "APM swap: K"
         );
 
-        swapData.amount0In = swapData.currentReserve0 > _reserve0 - amount0Out
-            ? swapData.currentReserve0 - (_reserve0 - amount0Out)
+         uint amount0In =  currentReserve0 > _reserve0 - amount0Out
+            ?  currentReserve0 - (_reserve0 - amount0Out)
             : 0;
-        swapData.amount1In = swapData.currentReserve1 > _reserve1 - amount1Out
-            ? swapData.currentReserve1 - (_reserve1 - amount1Out)
+         uint amount1In =  currentReserve1 > _reserve1 - amount1Out
+            ?  currentReserve1 - (_reserve1 - amount1Out)
             : 0;
         require(
-            swapData.amount0In > 0 || swapData.amount1In > 0,
+             amount0In > 0 ||  amount1In > 0,
             "APM swap: INSUFFICIENT_INPUT_AMOUNT"
         );
         if (amount0Out == 0) {
-            _updateWhenSwap(swapData.amount0In, amount1Out, token0, token1);
+            _updateWhenSwap( amount0In, amount1Out, token0, token1);
         } else {
-            _updateWhenSwap(swapData.amount1In, amount0Out, token1, token0);
+            _updateWhenSwap( amount1In, amount0Out, token1, token0);
         }
         unlocked = 1;
     }
@@ -297,6 +279,11 @@ contract APM is IAPM, GovernanceOwnable {
             );
             amounts[i + 1] = _getAmountOut(amounts[i], reserveIn, reserveOut);
         }
+    }
+
+    // force reserves to match balances
+    function sync(address tokenAddress) public {
+        totalReserve[tokenAddress] = IERC20(tokenAddress).balanceOf(address(this));
     }
 
 
