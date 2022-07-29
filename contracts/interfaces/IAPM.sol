@@ -32,5 +32,5 @@ interface IAPM {
 
     function getAmountsOut(uint amountIn, address[] memory path) external view returns (uint[] memory amounts);
 
-    function removeLiquidity(address _to, address tokenAddress, uint amount) external;
+    function removeLiquidityBank(address _to, address tokenAddress, uint amount) external;
 }

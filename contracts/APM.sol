@@ -48,7 +48,7 @@ contract APM is IAPM, GovernanceOwnable {
         bankAddress = _bankAddress;
     }
 
-    function getReservesOneToken(
+    function _getReservesOneToken(
         address tokenA, //token we want to know reserve
         address tokenB //pool associated
     ) private view returns (uint256 reserveA) {
@@ -66,12 +66,12 @@ contract APM is IAPM, GovernanceOwnable {
         returns (uint256 reserveA, uint256 reserveB)
     {
         (reserveA, reserveB) = (
-            getReservesOneToken(tokenA, tokenB),
-            getReservesOneToken(tokenB, tokenA)
+            _getReservesOneToken(tokenA, tokenB),
+            _getReservesOneToken(tokenB, tokenA)
         );
     }
 
-    function updateWhenAddLiquidityOneToken(
+    function _updateWhenAddLiquidityOneToken(
         uint256 amountA,
         address tokenA,
         address tokenB
@@ -88,7 +88,7 @@ contract APM is IAPM, GovernanceOwnable {
             uint256 oldEntriesA = entries[tokenA][tokenB]; //for updating total Entries
             uint256 totalEntriesA = totalEntries[updateData.tokenA]; //save gas
 
-            uint256 entriesA = entriesAfterAddingLiq(
+            uint256 entriesA = _entriesAfterAddingLiq(
                 oldEntriesA,
                 updateData.amountA,
                 totalEntriesA,
@@ -114,12 +114,11 @@ contract APM is IAPM, GovernanceOwnable {
         address tokenA,
         address tokenB
     ) external onlyBank {
-        //TODO : restrict update functions for bank only, using assert/require and not modifiers
-        updateWhenAddLiquidityOneToken(amountA, tokenA, tokenB);
-        updateWhenAddLiquidityOneToken(amountB, tokenB, tokenA);
+        _updateWhenAddLiquidityOneToken(amountA, tokenA, tokenB);
+        _updateWhenAddLiquidityOneToken(amountB, tokenB, tokenA);
     }
 
-    function updateWhenRemoveLiquidityOneToken(
+    function _updateWhenRemoveLiquidityOneToken(
         uint256 amountA,
         address tokenA,
         address tokenB
@@ -136,7 +135,7 @@ contract APM is IAPM, GovernanceOwnable {
         uint256 oldEntriesA = entries[tokenA][tokenB]; //for updating total entries
         uint256 totalEntriesA = totalEntries[updateData.tokenA]; //save gas
 
-        uint256 entriesA = entriesAfterRemovingLiq(
+        uint256 entriesA = _entriesAfterRemovingLiq(
             oldEntriesA,
             updateData.amountA,
             totalEntriesA,
@@ -163,34 +162,34 @@ contract APM is IAPM, GovernanceOwnable {
         totalReserve[token] -= amount;
     }
 
-    function updateWhenSwap(
+    function _updateWhenSwap(
         uint256 amountAAdded, //amountA is the amount of tokenA swapped in this pool ( so not the total amount of tokenA in this pool after the swap)
         uint256 amountBWithdrawn,
         address tokenA,
         address tokenB
     ) private {
-        updateWhenAddLiquidityOneToken(amountAAdded, tokenA, tokenB);
-        updateWhenRemoveLiquidityOneToken(amountBWithdrawn, tokenB, tokenA);
+        _updateWhenAddLiquidityOneToken(amountAAdded, tokenA, tokenB);
+        _updateWhenRemoveLiquidityOneToken(amountBWithdrawn, tokenB, tokenA);
     }
 
-    function entriesAfterAddingLiq(
+    function _entriesAfterAddingLiq(
         uint256 oldEntries,
         uint256 amount,
         uint256 totalEntriesToken,
         uint256 totalReserveToken
-    ) public pure returns (uint256 newEntries) {
+    ) internal pure returns (uint256 newEntries) {
         newEntries =
             oldEntries +
             (amount * totalEntriesToken) /
             totalReserveToken;
     }
 
-    function entriesAfterRemovingLiq(
+    function _entriesAfterRemovingLiq(
         uint256 oldEntries,
         uint256 amount,
         uint256 totalEntriesToken,
         uint256 totalReserveToken
-    ) public pure returns (uint256 newEntries) {
+    ) internal pure returns (uint256 newEntries) {
         newEntries =
             oldEntries -
             (amount * totalEntriesToken) /
@@ -263,15 +262,15 @@ contract APM is IAPM, GovernanceOwnable {
             "APM swap: INSUFFICIENT_INPUT_AMOUNT"
         );
         if (amount0Out == 0) {
-            updateWhenSwap(swapData.amount0In, amount1Out, token0, token1);
+            _updateWhenSwap(swapData.amount0In, amount1Out, token0, token1);
         } else {
-            updateWhenSwap(swapData.amount1In, amount0Out, token1, token0);
+            _updateWhenSwap(swapData.amount1In, amount0Out, token1, token0);
         }
         unlocked = 1;
     }
 
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
-    function getAmountOut(
+    function _getAmountOut(
         uint256 amountIn,
         uint256 reserveIn,
         uint256 reserveOut
@@ -296,7 +295,7 @@ contract APM is IAPM, GovernanceOwnable {
                 path[i],
                 path[i + 1]
             );
-            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
+            amounts[i + 1] = _getAmountOut(amounts[i], reserveIn, reserveOut);
         }
     }
 
