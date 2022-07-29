@@ -300,16 +300,25 @@ contract APM is IAPM, GovernanceOwnable {
         }
     }
 
-    // Bank Access
-    function removeLiquidity(
+
+    function _removeLiquidity(
         address _to,
         address tokenAddress,
         uint256 amount
-    ) external onlyBank {
+    ) internal {
         // transfer
         IERC20(tokenAddress).safeTransfer(_to, amount);
         // update getReserves
         updateWhenRemoveLiquidity(amount, tokenAddress);
+    }
+
+    // Bank Access
+    function removeLiquidityBank(
+        address _to,
+        address tokenAddress,
+        uint256 amount
+    ) external onlyBank {
+        _removeLiquidity(_to, tokenAddress, amount);
     }
 
     // Gov Access
@@ -318,7 +327,6 @@ contract APM is IAPM, GovernanceOwnable {
         address tokenAddress,
         uint256 amount
     ) external onlyGovernance {
-        IERC20(tokenAddress).safeTransfer(_to, amount);
-        updateWhenRemoveLiquidity(amount, tokenAddress);
+        _removeLiquidity(_to, tokenAddress, amount);
     }
 }
