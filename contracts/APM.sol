@@ -291,7 +291,7 @@ contract APM is IAPM, GovernanceOwnable {
         address _to,
         address tokenAddress,
         uint256 amount
-    ) internal {
+    ) private {
         // transfer
         IERC20(tokenAddress).safeTransfer(_to, amount);
         // update getReserves
