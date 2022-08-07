@@ -307,7 +307,8 @@ contract APM is IAPM, GovernanceOwnable {
         address _to,
         address tokenAddress,
         uint256 amount
-    ) external onlyBank {
+    ) external {
+        require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
         // transfer
         IERC20(tokenAddress).safeTransfer(_to, amount);
         // update getReserves
