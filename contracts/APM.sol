@@ -123,7 +123,7 @@ contract APM is IAPM, GovernanceOwnable {
 
         uint256 totalReserveA = totalReserve[tokenA]; //gas saving
 
-        
+
         //update Entries
         uint256 oldEntriesA = entries[tokenA][tokenB]; //for updating total entries
         uint256 totalEntriesA = totalEntries[tokenA]; //save gas
@@ -141,7 +141,7 @@ contract APM is IAPM, GovernanceOwnable {
             totalEntriesA -
             oldEntriesA +
             entriesA;
-        
+
         //update total Reserve
         totalReserve[tokenA] = totalReserveA -  amountA; //we replaced this by sync
         //sync(tokenA);
@@ -286,33 +286,16 @@ contract APM is IAPM, GovernanceOwnable {
         totalReserve[tokenAddress] = IERC20(tokenAddress).balanceOf(address(this));
     }
 
-
-    function _removeLiquidity(
+    // Bank Access
+    function removeLiquidity(
         address _to,
         address tokenAddress,
         uint256 amount
-    ) private {
+    ) external {
+        require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
         // transfer
         IERC20(tokenAddress).safeTransfer(_to, amount);
         // update getReserves
         updateWhenRemoveLiquidity(amount, tokenAddress);
-    }
-
-    // Bank Access
-    function removeLiquidityBank(
-        address _to,
-        address tokenAddress,
-        uint256 amount
-    ) external onlyBank {
-        _removeLiquidity(_to, tokenAddress, amount);
-    }
-
-    // Gov Access
-    function removeLiquidityGovernance(
-        address _to,
-        address tokenAddress,
-        uint256 amount
-    ) external onlyGovernance {
-        _removeLiquidity(_to, tokenAddress, amount);
     }
 }

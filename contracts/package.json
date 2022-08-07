@@ -1,6 +1,6 @@
 {
   "name": "@debond-protocol/debond-apm-contracts",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Debond Automated Pair Maker Contracts",
   "main": "index.js",
   "directories": {
