@@ -34,9 +34,11 @@ contract APM is IAPM, GovernanceOwnable {
         address tokenB;
     }
 
-    constructor(address _governanceAddress)
+    constructor(address _governanceAddress, address _bankAddress)
         GovernanceOwnable(_governanceAddress)
-    {}
+    {
+        bankAddress = _bankAddress;
+    }
 
     modifier onlyBank() {
         require(msg.sender == bankAddress, "APM: Not Authorised");
@@ -147,12 +149,10 @@ contract APM is IAPM, GovernanceOwnable {
         //sync(tokenA);
     }
 
-    function updateWhenRemoveLiquidity(
+    function _updateWhenRemoveLiquidity(
         uint256 amount, //amountA is the amount of tokenA removed in total pool reserve ( so not the total amount of tokenA in total pool reserve)
         address token
-    ) public {
-        require(msg.sender == bankAddress, "APM: Not Authorised");
-
+    ) private {
         totalReserve[token] -= amount;
     }
 
@@ -286,7 +286,6 @@ contract APM is IAPM, GovernanceOwnable {
         totalReserve[tokenAddress] = IERC20(tokenAddress).balanceOf(address(this));
     }
 
-    // Bank Access
     function removeLiquidity(
         address _to,
         address tokenAddress,
@@ -296,6 +295,6 @@ contract APM is IAPM, GovernanceOwnable {
         // transfer
         IERC20(tokenAddress).safeTransfer(_to, amount);
         // update getReserves
-        updateWhenRemoveLiquidity(amount, tokenAddress);
+        _updateWhenRemoveLiquidity(amount, tokenAddress);
     }
 }
