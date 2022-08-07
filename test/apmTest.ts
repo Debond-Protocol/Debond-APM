@@ -16,7 +16,7 @@ contract('APM', async (accounts: string[]) => {
     let usdtContract: USDTInstance
     let dbitContract: DBITInstance
     let apmContract : APMInstance
-    const bankAddress = accounts[1];
+    const [governanceAddress, bankAddress] = accounts;
 
     it('Initialisation', async () => {
         usdcContract = await USDC.deployed();
@@ -43,18 +43,17 @@ contract('APM', async (accounts: string[]) => {
 
 
     })
-    it('update remove', async () => {
+    it('should remove liquidity from the APM and update the reserves accordingly', async () => {
         usdcContract = await USDC.deployed();
         dbitContract = await DBIT.deployed();
         apmContract = (await APM.deployed());
 
-        await usdcContract.mint(accounts[0], 100000);
-
+        await dbitContract.mint(apmContract.address, 5000);
 
         const s = await apmContract.getReserves(usdcContract.address, dbitContract.address);
         console.log("here we print r0 before remove : " +  s[0].toString(),"here we print r1 before remove : " + s[1].toString());
 
-        await apmContract.updateWhenRemoveLiquidity(5000, dbitContract.address, {from: bankAddress});
+        await apmContract.removeLiquidity(accounts[3],  dbitContract.address, 5000, {from: governanceAddress});
 
         const r = await apmContract.getReserves(usdcContract.address, dbitContract.address);
         console.log("here we print r0 after remove : " +  r[0].toString(),"here we print r1 after remove : " + r[1].toString());

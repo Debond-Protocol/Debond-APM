@@ -34,9 +34,11 @@ contract APM is IAPM, GovernanceOwnable {
         address tokenB;
     }
 
-    constructor(address _governanceAddress)
+    constructor(address _governanceAddress, address _bankAddress)
         GovernanceOwnable(_governanceAddress)
-    {}
+    {
+        bankAddress = _bankAddress;
+    }
 
     modifier onlyBank() {
         require(msg.sender == bankAddress, "APM: Not Authorised");
@@ -71,7 +73,7 @@ contract APM is IAPM, GovernanceOwnable {
         );
     }
 
-    function updateWhenAddLiquidityOneToken(
+    function _updateWhenAddLiquidityOneToken(
         uint256 amountA,
         address tokenA,
         address tokenB
@@ -115,11 +117,11 @@ contract APM is IAPM, GovernanceOwnable {
         address tokenB
     ) external onlyBank {
         //TODO : restrict update functions for bank only, using assert/require and not modifiers
-        updateWhenAddLiquidityOneToken(amountA, tokenA, tokenB);
-        updateWhenAddLiquidityOneToken(amountB, tokenB, tokenA);
+        _updateWhenAddLiquidityOneToken(amountA, tokenA, tokenB);
+        _updateWhenAddLiquidityOneToken(amountB, tokenB, tokenA);
     }
 
-    function updateWhenRemoveLiquidityOneToken(
+    function _updateWhenRemoveLiquidityOneToken(
         uint256 amountA,
         address tokenA,
         address tokenB
@@ -156,23 +158,21 @@ contract APM is IAPM, GovernanceOwnable {
         totalReserve[updateData.tokenA] = totalReserveA - updateData.amountA;
     }
 
-    function updateWhenRemoveLiquidity(
+    function _updateWhenRemoveLiquidity(
         uint256 amount, //amountA is the amount of tokenA removed in total pool reserve ( so not the total amount of tokenA in total pool reserve)
         address token
-    ) public {
-        require(msg.sender == bankAddress, "APM: Not Authorised");
-
+    ) private {
         totalReserve[token] -= amount;
     }
 
-    function updateWhenSwap(
+    function _updateWhenSwap(
         uint256 amountAAdded, //amountA is the amount of tokenA swapped in this pool ( so not the total amount of tokenA in this pool after the swap)
         uint256 amountBWithdrawn,
         address tokenA,
         address tokenB
     ) private {
-        updateWhenAddLiquidityOneToken(amountAAdded, tokenA, tokenB);
-        updateWhenRemoveLiquidityOneToken(amountBWithdrawn, tokenB, tokenA);
+        _updateWhenAddLiquidityOneToken(amountAAdded, tokenA, tokenB);
+        _updateWhenRemoveLiquidityOneToken(amountBWithdrawn, tokenB, tokenA);
     }
 
     function entriesAfterAddingLiq(
@@ -265,9 +265,9 @@ contract APM is IAPM, GovernanceOwnable {
             "APM swap: INSUFFICIENT_INPUT_AMOUNT"
         );
         if (amount0Out == 0) {
-            updateWhenSwap(swapData.amount0In, amount1Out, token0, token1);
+            _updateWhenSwap(swapData.amount0In, amount1Out, token0, token1);
         } else {
-            updateWhenSwap(swapData.amount1In, amount0Out, token1, token0);
+            _updateWhenSwap(swapData.amount1In, amount0Out, token1, token0);
         }
         unlocked = 1;
     }
@@ -302,7 +302,6 @@ contract APM is IAPM, GovernanceOwnable {
         }
     }
 
-    // Bank Access
     function removeLiquidity(
         address _to,
         address tokenAddress,
@@ -312,6 +311,6 @@ contract APM is IAPM, GovernanceOwnable {
         // transfer
         IERC20(tokenAddress).safeTransfer(_to, amount);
         // update getReserves
-        updateWhenRemoveLiquidity(amount, tokenAddress);
+        _updateWhenRemoveLiquidity(amount, tokenAddress);
     }
 }
