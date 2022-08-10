@@ -24,15 +24,7 @@ contract APM is IAPM, GovernanceOwnable {
     mapping(address => uint256) internal totalReserve;
     mapping(address => uint256) internal totalEntries; //Entries : virtual liquidity pool
     mapping(address => mapping(address => uint256)) entries;
-    address bankAddress;
-
-    struct UpdateData {
-        //to avoid stack too deep error
-        uint256 amountA;
-        uint256 amountB;
-        address tokenA;
-        address tokenB;
-    }
+    address bankAddress; //todo : immutable?
 
     constructor(address _governanceAddress)
         GovernanceOwnable(_governanceAddress)
@@ -59,6 +51,11 @@ contract APM is IAPM, GovernanceOwnable {
         }
     }
 
+    /**
+    * @notice know the reserve for a pair (see white paper to know how it works)
+    * @param tokenA address of tokenA
+    * @param tokenB address of tokenB
+    **/
     function getReserves(address tokenA, address tokenB)
         public
         view
@@ -105,6 +102,13 @@ contract APM is IAPM, GovernanceOwnable {
         totalReserve[tokenA] = totalReserveA + amountA;  //we replaced this by sync
     }
 
+    /**
+    * @notice update reserves when a pair is added in the apm
+    * @param amountA amount of tokenA
+    * @param amountB amount of tokenB
+    * @param tokenA address of tokenA
+    * @param tokenB address of tokenB
+    **/
     function updateWhenAddLiquidity(
         uint256 amountA,
         uint256 amountB,
@@ -147,6 +151,11 @@ contract APM is IAPM, GovernanceOwnable {
         //sync(tokenA);
     }
 
+    /**
+    * @notice update reserves when one token is removed from apm
+    * @param amount amount of token
+    * @param token address of token
+    **/
     function updateWhenRemoveLiquidity(
         uint256 amount, //amountA is the amount of tokenA removed in total pool reserve ( so not the total amount of tokenA in total pool reserve)
         address token
@@ -156,6 +165,13 @@ contract APM is IAPM, GovernanceOwnable {
         totalReserve[token] -= amount;
     }
 
+    /**
+    * @notice update reserves when one token is swapped for another one
+    * @param amountAAdded amount of tokenA the user gives to the apm
+    * @param amountBWithdrawn amount of tokenB the user gets from the apm
+    * @param tokenA address of tokenA
+    * @param tokenB address of tokenB
+    **/
     function _updateWhenSwap(
         uint256 amountAAdded, //amountA is the amount of tokenA swapped in this pool ( so not the total amount of tokenA in this pool after the swap)
         uint256 amountBWithdrawn,
@@ -192,6 +208,15 @@ contract APM is IAPM, GovernanceOwnable {
 
     uint256 private unlocked = 1; //reentracy
 
+
+    /**
+    * @notice swap one token for another. This is a low level functions which should be called trough the BankRouter
+    * @param amount0Out amount of token0 the user gives to the apm
+    * @param amount1Out amount of token1 the user gets back from the apm
+    * @param token0 address of token0
+    * @param token1 address of token1
+    * @param to address to send token1
+    */
     function swap(
         uint256 amount0Out,
         uint256 amount1Out,
@@ -281,10 +306,13 @@ contract APM is IAPM, GovernanceOwnable {
         }
     }
 
+    /*
     // force reserves to match balances
     function sync(address tokenAddress) public {
         totalReserve[tokenAddress] = IERC20(tokenAddress).balanceOf(address(this));
-    }
+    }  
+    tests not passing with this, removing for now
+    */
 
 
     function _removeLiquidity(
@@ -298,7 +326,12 @@ contract APM is IAPM, GovernanceOwnable {
         updateWhenRemoveLiquidity(amount, tokenAddress);
     }
 
-    // Bank Access
+    /**
+    * @notice use this function when banks needs to remove liquidity
+    * @param _to address to send the token to
+    * @param tokenAddress address of token to withdraw
+    * @param amount amount of token to withdraw
+    */
     function removeLiquidityBank(
         address _to,
         address tokenAddress,
@@ -307,7 +340,12 @@ contract APM is IAPM, GovernanceOwnable {
         _removeLiquidity(_to, tokenAddress, amount);
     }
 
-    // Gov Access
+    /**
+    * @notice use this function when governance needs to remove liquidity
+    * @param _to address to send the token to
+    * @param tokenAddress address of token to withdraw
+    * @param amount amount of token to withdraw
+    */
     function removeLiquidityGovernance(
         address _to,
         address tokenAddress,
