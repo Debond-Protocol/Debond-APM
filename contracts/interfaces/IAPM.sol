@@ -24,13 +24,9 @@ interface IAPM {
         address _tokenA,
         address _tokenB) external;
 
-    function updateWhenRemoveLiquidity(
-        uint amount, 
-        address token) external;
-
     function swap(uint amount0Out, uint amount1Out,address token0, address token1, address to) external;
 
     function getAmountsOut(uint amountIn, address[] memory path) external view returns (uint[] memory amounts);
 
-    function removeLiquidityBank(address _to, address tokenAddress, uint amount) external;
+    function removeLiquidity(address _to, address tokenAddress, uint amount) external;
 }

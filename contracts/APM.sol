@@ -26,9 +26,11 @@ contract APM is IAPM, GovernanceOwnable {
     mapping(address => mapping(address => uint256)) entries;
     address bankAddress; //todo : immutable?
 
-    constructor(address _governanceAddress)
+    constructor(address _governanceAddress, address _bankAddress)
         GovernanceOwnable(_governanceAddress)
-    {}
+    {
+        bankAddress = _bankAddress;
+    }
 
     modifier onlyBank() {
         require(msg.sender == bankAddress, "APM: Not Authorised");
@@ -127,7 +129,7 @@ contract APM is IAPM, GovernanceOwnable {
 
         uint256 totalReserveA = totalReserve[tokenA]; //gas saving
 
-        
+
         //update Entries
         uint256 oldEntriesA = entries[tokenA][tokenB]; //for updating total entries
         uint256 totalEntriesA = totalEntries[tokenA]; //save gas
@@ -145,7 +147,7 @@ contract APM is IAPM, GovernanceOwnable {
             totalEntriesA -
             oldEntriesA +
             entriesA;
-        
+
         //update total Reserve
         totalReserve[tokenA] = totalReserveA -  amountA; //we replaced this by sync
         //sync(tokenA);
@@ -156,12 +158,10 @@ contract APM is IAPM, GovernanceOwnable {
     * @param amount amount of token
     * @param token address of token
     **/
-    function updateWhenRemoveLiquidity(
+    function _updateWhenRemoveLiquidity(
         uint256 amount, //amountA is the amount of tokenA removed in total pool reserve ( so not the total amount of tokenA in total pool reserve)
         address token
-    ) public {
-        require(msg.sender == bankAddress, "APM: Not Authorised");
-
+    ) private {
         totalReserve[token] -= amount;
     }
 
@@ -187,7 +187,7 @@ contract APM is IAPM, GovernanceOwnable {
         uint256 amount,
         uint256 totalEntriesToken,
         uint256 totalReserveToken
-    ) internal pure returns (uint256 newEntries) {
+    ) private pure returns (uint256 newEntries) {
         newEntries =
             oldEntries +
             (amount * totalEntriesToken) /
@@ -199,7 +199,7 @@ contract APM is IAPM, GovernanceOwnable {
         uint256 amount,
         uint256 totalEntriesToken,
         uint256 totalReserveToken
-    ) internal pure returns (uint256 newEntries) {
+    ) private pure returns (uint256 newEntries) {
         newEntries =
             oldEntries -
             (amount * totalEntriesToken) /
@@ -314,43 +314,15 @@ contract APM is IAPM, GovernanceOwnable {
     tests not passing with this, removing for now
     */
 
-
-    function _removeLiquidity(
+    function removeLiquidity(
         address _to,
         address tokenAddress,
         uint256 amount
-    ) private {
+    ) external {
+        require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
         // transfer
         IERC20(tokenAddress).safeTransfer(_to, amount);
         // update getReserves
-        updateWhenRemoveLiquidity(amount, tokenAddress);
-    }
-
-    /**
-    * @notice use this function when banks needs to remove liquidity
-    * @param _to address to send the token to
-    * @param tokenAddress address of token to withdraw
-    * @param amount amount of token to withdraw
-    */
-    function removeLiquidityBank(
-        address _to,
-        address tokenAddress,
-        uint256 amount
-    ) external onlyBank {
-        _removeLiquidity(_to, tokenAddress, amount);
-    }
-
-    /**
-    * @notice use this function when governance needs to remove liquidity
-    * @param _to address to send the token to
-    * @param tokenAddress address of token to withdraw
-    * @param amount amount of token to withdraw
-    */
-    function removeLiquidityGovernance(
-        address _to,
-        address tokenAddress,
-        uint256 amount
-    ) external onlyGovernance {
-        _removeLiquidity(_to, tokenAddress, amount);
+        _updateWhenRemoveLiquidity(amount, tokenAddress);
     }
 }
