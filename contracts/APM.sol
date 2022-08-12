@@ -76,7 +76,7 @@ contract APM is IAPM, GovernanceOwnable {
         address tokenB
     ) private {
 
-        uint256 totalReserveA = totalReserve[tokenA]; //todo : should be put totalreserve[tokenA] or IERC20(tokenA).balanceOf(address(this)) ?
+        uint256 totalReserveA = totalReserve[tokenA]; //todo : should be put totalreserve[tokenA] or IERC20(tokenA).balanceOf(address(this))? No : totalReserve[A] is old reserve while balanceOf is current reserve
 
         if (totalReserveA != 0) {
             //update entries
@@ -100,8 +100,8 @@ contract APM is IAPM, GovernanceOwnable {
             entries[tokenA][tokenB] = amountA;
             totalEntries[tokenA] = amountA;
         }
-        //sync( tokenA);
-        totalReserve[tokenA] = totalReserveA + amountA;  //we replaced this by sync
+        sync(tokenA);
+        //totalReserve[tokenA] = totalReserveA + amountA;  //we replaced this by sync
     }
 
     /**
@@ -306,12 +306,12 @@ contract APM is IAPM, GovernanceOwnable {
         }
     }
 
-    /*
+    
     // force reserves to match balances
     function sync(address tokenAddress) public {
         totalReserve[tokenAddress] = IERC20(tokenAddress).balanceOf(address(this));
-    }  
-    tests not passing with this, removing for now
+    }
+    /*tests not passing with this, removing for now
     */
 
     function removeLiquidity(
