@@ -18,13 +18,49 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@debond-protocol/debond-governance-contracts/utils/GovernanceOwnable.sol";
 
-contract APM is IAPM, GovernanceOwnable {
+interface IUpdatable {
+    function updateGovernance(
+        address _governanceAddress
+    ) external;
+
+    function updateBank(
+        address _bankAddress
+    ) external;
+}
+
+contract APMExecutable is IUpdatable {
+    address governanceAddress;
+    address executableAddress;
+    address bankAddress; 
+
+    modifier onlyExec {
+        require(msg.sender == executableAddress, "APM: only exec");
+        _;
+    }
+    modifier onlyGovernance {
+        require(msg.sender == governanceAddress, "APM : only gov");
+        _;
+    }
+
+    function updateGovernance(
+        address _governanceAddress
+    ) external onlyExec {
+        governanceAddress = _governanceAddress;
+    }
+    
+    function updateBank(
+        address _bankAddress
+    ) external onlyExec {
+        bankAddress = _bankAddress;
+    }
+}
+
+contract APM is IAPM,  APMExecutable {
     using SafeERC20 for IERC20;
 
     mapping(address => uint256) internal totalReserve;
     mapping(address => uint256) internal totalEntries; //Entries : virtual liquidity pool
     mapping(address => mapping(address => uint256)) entries;
-    address bankAddress; //todo : immutable?
 
     //debugging functions
     /*function getTotalReserve(address tokenAddress) public view returns (uint256 totalReserves) {
@@ -37,10 +73,11 @@ contract APM is IAPM, GovernanceOwnable {
         entriesTokens = entries[tokenA][tokenB];
     }*/
 
-    constructor(address _governanceAddress, address _bankAddress)
-        GovernanceOwnable(_governanceAddress)
+    constructor(address _governanceAddress, address _bankAddress, address _executableAddress)
     {
         bankAddress = _bankAddress;
+        executableAddress = _executableAddress;
+        governanceAddress = _governanceAddress;
     }
 
     modifier onlyBank() {
