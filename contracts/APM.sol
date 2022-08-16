@@ -28,7 +28,7 @@ interface IUpdatable {
     ) external;
 }
 
-contract APMExecutable is IUpdatable {
+abstract contract APMExecutable is IUpdatable {
     address governanceAddress;
     address executableAddress;
     address bankAddress; 
@@ -55,7 +55,7 @@ contract APMExecutable is IUpdatable {
     }
 }
 
-contract APM is IAPM,  APMExecutable {
+contract APM is IAPM, APMExecutable {
     using SafeERC20 for IERC20;
 
     mapping(address => uint256) internal totalReserve;
