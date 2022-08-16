@@ -6,8 +6,10 @@ node_modules/
 build/
 types/
 tenderly.yaml
+test/_keys.json
 
 Bank.sol.txt
 Exchange.sol.txt
 tenderly.yaml.txt
 .idea
+_keys.json
