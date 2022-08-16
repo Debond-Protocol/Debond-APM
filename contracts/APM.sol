@@ -26,6 +26,17 @@ contract APM is IAPM, GovernanceOwnable {
     mapping(address => mapping(address => uint256)) entries;
     address bankAddress; //todo : immutable?
 
+    //debugging functions
+    /*function getTotalReserve(address tokenAddress) public view returns (uint256 totalReserves) {
+        totalReserves = totalReserve[tokenAddress];
+    }
+    function getTotalEntries(address tokenAddress) public view returns (uint256 totalEntriesToken) {
+        totalEntriesToken = totalEntries[tokenAddress];
+    }
+    function getEntries(address tokenA, address tokenB) public view returns (uint256 entriesTokens) {
+        entriesTokens = entries[tokenA][tokenB];
+    }*/
+
     constructor(address _governanceAddress, address _bankAddress)
         GovernanceOwnable(_governanceAddress)
     {
@@ -149,8 +160,8 @@ contract APM is IAPM, GovernanceOwnable {
             entriesA;
 
         //update total Reserve
-        totalReserve[tokenA] = totalReserveA -  amountA; //we replaced this by sync
-        //sync(tokenA);
+        //totalReserve[tokenA] = totalReserveA -  amountA; //we replaced this by sync
+        sync(tokenA);
     }
 
     /**
@@ -311,8 +322,6 @@ contract APM is IAPM, GovernanceOwnable {
     function sync(address tokenAddress) public {
         totalReserve[tokenAddress] = IERC20(tokenAddress).balanceOf(address(this));
     }
-    /*tests not passing with this, removing for now
-    */
 
     function removeLiquidity(
         address _to,

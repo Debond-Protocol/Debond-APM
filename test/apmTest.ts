@@ -18,7 +18,7 @@ contract('APM', async (accounts: string[]) => {
     let apmContract : APMInstance
     const [governanceAddress, bankAddress] = accounts;
 
-    it('Initialisation', async () => {
+    before('Initialisation', async () => {
         usdcContract = await USDC.deployed();
         usdtContract = await USDT.deployed();
         dbitContract = await DBIT.deployed();
@@ -82,14 +82,17 @@ contract('APM', async (accounts: string[]) => {
         console.log("here we print r0 before addLiqq : " +  s[0].toString(),"here we print r1 before addliq :" + s[1].toString());
 
         await usdtContract.mint(apmContract.address, '100');
-        await dbitContract.mint(apmContract.address, '10000');
+        await dbitContract.mint(apmContract.address, '5000'); //we mint 10 000 but there are already 5000 removed from previous test that we didn' really removed
+
 
         await apmContract.updateWhenAddLiquidity(100, 10000, usdtContract.address, dbitContract.address, {from: bankAddress});
+
 
         let balanceUSDT = await usdtContract.balanceOf(apmContract.address);
         let balanceDBIT = await dbitContract.balanceOf(apmContract.address);
         console.log("balanceUSDT : " +  balanceUSDT);
         console.log("balanceDBIT : " +  balanceDBIT);
+
 
         const r = await apmContract.getReserves(usdtContract.address, dbitContract.address);
         console.log("here we print r0 after addliq : " +  r[0].toString(),"here we print r1 after addliq :" + r[1].toString());
@@ -98,6 +101,10 @@ contract('APM', async (accounts: string[]) => {
         const dbitBalance = r[1].toString();
         expect(usdtBalance).to.equal('100');
         expect(dbitBalance).to.equal('10000');
+
+
+        
+
 
         
 
