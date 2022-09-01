@@ -38,7 +38,7 @@ contract APM is IAPM, GovernanceOwnable {
         _;
     }
 
-    function setBankAddress(address _bankAddress) external onlyGovernance {
+    function updateBankAddress(address _bankAddress) external onlyGovernance {
         require(_bankAddress != address(0), "APM: Address 0 given for Bank!");
         bankAddress = _bankAddress;
     }
