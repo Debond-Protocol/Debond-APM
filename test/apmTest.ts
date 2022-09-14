@@ -101,12 +101,5 @@ contract('APM', async (accounts: string[]) => {
         const dbitBalance = r[1].toString();
         expect(usdtBalance).to.equal('100');
         expect(dbitBalance).to.equal('10000');
-
-
-        
-
-
-        
-
     })
 });

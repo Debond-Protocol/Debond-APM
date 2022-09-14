@@ -17,7 +17,7 @@ import "./interfaces/IAPM.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@debond-protocol/debond-governance-contracts/utils/GovernanceOwnable.sol";
-import "@debond-protocol/debond-token-contract/interfaces/IDebondToken.sol";
+import "@debond-protocol/debond-token-contracts/interfaces/IDebondToken.sol";
 
 interface IUpdatable {
     function updateGovernance(
@@ -373,12 +373,29 @@ contract APM is IAPM, APMExecutable {
         _updateWhenRemoveLiquidity(amount, tokenAddress);
     }
 
+    function removeLiquidityInsidePool(
+        address _to,
+        address tokenA,
+        address tokenB,
+        uint256 amountA
+    ) external {
+        updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
+        IERC20(tokenA).safeTransfer(_to, amountA);
+    }
 
-    function burnDBIT(uint _amount) external {
+    function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) public {
         require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
-        IDebondToken(DBITAddress).burn(_amount);
-        _updateWhenRemoveLiquidity(_amount, DBITAddress);
+        _updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
 
     }
+
+
+    /*function burnDBIT(address add, uint _amount) external {
+        require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
+        IDebondToken(add).burn(_amount);
+        _updateWhenRemoveLiquidity(_amount, add);
+
+    }
+    */
 
 }

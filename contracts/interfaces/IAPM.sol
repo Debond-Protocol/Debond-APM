@@ -30,5 +30,12 @@ interface IAPM {
 
     function removeLiquidity(address _to, address tokenAddress, uint amount) external;
 
-    function burnDBIT(uint amount) external;
+    function removeLiquidityInsidePool(
+        address _to,
+        address tokenA,
+        address tokenB,
+        uint256 amountA
+    ) external;
+
+    //function burnDBIT(uint amount) external;
 }
