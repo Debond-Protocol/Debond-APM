@@ -373,15 +373,15 @@ contract APM is IAPM, APMExecutable {
         _updateWhenRemoveLiquidity(amount, tokenAddress);
     }
 
-    function removeLiquidityInsidePool(
+    /*function removeLiquidityInsidePool(
         address _to,
         address tokenA,
         address tokenB,
         uint256 amountA
     ) external {
-        IERC20(tokenA).safeTransfer(_to, amountA);
         updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
-    }
+        IERC20(tokenA).safeTransfer(_to, amountA);
+    }*/
 
     function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) public {
         require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");

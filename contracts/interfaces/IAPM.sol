@@ -30,11 +30,13 @@ interface IAPM {
 
     function removeLiquidity(address _to, address tokenAddress, uint amount) external;
 
-    function removeLiquidityInsidePool(
+    /*function removeLiquidityInsidePool(
         address _to,
         address tokenA,
         address tokenB,
         uint256 amountA
-    ) external;
+    ) external;*/
+
+    function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) public;
 
 }
