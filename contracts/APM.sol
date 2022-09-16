@@ -386,6 +386,5 @@ contract APM is IAPM, APMExecutable {
     function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) public {
         require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
         _updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
-
     }
 }

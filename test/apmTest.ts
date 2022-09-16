@@ -102,4 +102,16 @@ contract('APM', async (accounts: string[]) => {
         expect(usdtBalance).to.equal('100');
         expect(dbitBalance).to.equal('10000');
     })
+
+    it('remove inside pool', async () => {
+        const s = await apmContract.getReserves(usdtContract.address, dbitContract.address);
+        console.log("here we print r0 : " +  s[0].toString(),"here we print r1 :" + s[1].toString());
+        const r = await apmContract.getReserves(usdcContract.address, dbitContract.address);
+        console.log("here we print r0 : " +  r[0].toString(),"here we print r1 :" + r[1].toString());
+        await apmContract.updateWhenRemoveLiquidityOneToken(30,  dbitContract.address, usdtContract.address, {from : bankAddress});
+        const p = await apmContract.getReserves(usdtContract.address, dbitContract.address);
+        console.log("here we print r0 : " +  p[0].toString(),"here we print r1 :" + p[1].toString());
+        const d = await apmContract.getReserves(usdcContract.address, dbitContract.address);
+        console.log("here we print r0 : " +  d[0].toString(),"here we print r1 :" + d[1].toString());
+    })
 });

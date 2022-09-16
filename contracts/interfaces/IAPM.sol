@@ -37,6 +37,6 @@ interface IAPM {
         uint256 amountA
     ) external;*/
 
-    function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) public;
+    function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) external;
 
 }
