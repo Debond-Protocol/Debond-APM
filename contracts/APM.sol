@@ -74,10 +74,10 @@ contract APM is IAPM, APMExecutable {
         entriesTokens = entries[tokenA][tokenB];
     }*/
 
-    constructor(address _governanceAddress, address _bankAddress, address _executableAddress)
+    constructor(address _governanceAddress, address _bankAddress/*, address _executableAddress*/)
     {
         bankAddress = _bankAddress;
-        executableAddress = _executableAddress;
+        //executableAddress = _executableAddress;
         governanceAddress = _governanceAddress;
     }
 
@@ -366,7 +366,7 @@ contract APM is IAPM, APMExecutable {
         address tokenAddress,
         uint256 amount
     ) external {
-        require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
+        require(msg.sender == bankAddress || msg.sender == governanceAddress /*|| msg.sender == stakingAddress*/, "APM: Not Authorised");
         // transfer
         IERC20(tokenAddress).safeTransfer(_to, amount);
         // update getReserves
@@ -379,8 +379,8 @@ contract APM is IAPM, APMExecutable {
         address tokenB,
         uint256 amountA
     ) external {
-        updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
         IERC20(tokenA).safeTransfer(_to, amountA);
+        updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
     }
 
     function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) public {
@@ -388,14 +388,4 @@ contract APM is IAPM, APMExecutable {
         _updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
 
     }
-
-
-    /*function burnDBIT(address add, uint _amount) external {
-        require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
-        IDebondToken(add).burn(_amount);
-        _updateWhenRemoveLiquidity(_amount, add);
-
-    }
-    */
-
 }

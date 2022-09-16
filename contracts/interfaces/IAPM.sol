@@ -37,5 +37,4 @@ interface IAPM {
         uint256 amountA
     ) external;
 
-    //function burnDBIT(uint amount) external;
 }
