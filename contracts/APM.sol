@@ -64,7 +64,7 @@ contract APM is IAPM, APMExecutable {
     mapping(address => mapping(address => uint256)) entries;
 
     //debugging functions
-    /*function getTotalReserve(address tokenAddress) public view returns (uint256 totalReserves) {
+    function getTotalReserve(address tokenAddress) public view returns (uint256 totalReserves) {
         totalReserves = totalReserve[tokenAddress];
     }
     function getTotalEntries(address tokenAddress) public view returns (uint256 totalEntriesToken) {
@@ -72,7 +72,7 @@ contract APM is IAPM, APMExecutable {
     }
     function getEntries(address tokenA, address tokenB) public view returns (uint256 entriesTokens) {
         entriesTokens = entries[tokenA][tokenB];
-    }*/
+    }
 
     constructor(address _governanceAddress, address _bankAddress/*, address _executableAddress*/)
     {
