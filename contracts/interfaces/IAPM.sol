@@ -29,4 +29,19 @@ interface IAPM {
     function getAmountsOut(uint amountIn, address[] memory path) external view returns (uint[] memory amounts);
 
     function removeLiquidity(address _to, address tokenAddress, uint amount) external;
+
+    /*function removeLiquidityInsidePool(
+        address _to,
+        address tokenA,
+        address tokenB,
+        uint256 amountA
+    ) external;*/
+
+    function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) external;
+
+    function getTotalReserve(address tokenAddress) external view returns (uint256 totalReserves);
+    
+    function getTotalEntries(address tokenAddress) external view returns (uint256 totalEntriesToken);
+    function getEntries(address tokenA, address tokenB) external view returns (uint256 entriesTokens);
+
 }

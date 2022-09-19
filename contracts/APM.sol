@@ -17,6 +17,7 @@ import "./interfaces/IAPM.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@debond-protocol/debond-governance-contracts/utils/GovernanceOwnable.sol";
+import "@debond-protocol/debond-token-contracts/interfaces/IDebondToken.sol";
 
 interface IUpdatable {
     function updateGovernance(
@@ -63,7 +64,7 @@ contract APM is IAPM, APMExecutable {
     mapping(address => mapping(address => uint256)) entries;
 
     //debugging functions
-    /*function getTotalReserve(address tokenAddress) public view returns (uint256 totalReserves) {
+    function getTotalReserve(address tokenAddress) public view returns (uint256 totalReserves) {
         totalReserves = totalReserve[tokenAddress];
     }
     function getTotalEntries(address tokenAddress) public view returns (uint256 totalEntriesToken) {
@@ -71,12 +72,12 @@ contract APM is IAPM, APMExecutable {
     }
     function getEntries(address tokenA, address tokenB) public view returns (uint256 entriesTokens) {
         entriesTokens = entries[tokenA][tokenB];
-    }*/
+    }
 
-    constructor(address _governanceAddress, address _bankAddress, address _executableAddress)
+    constructor(address _governanceAddress, address _bankAddress/*, address _executableAddress*/)
     {
         bankAddress = _bankAddress;
-        executableAddress = _executableAddress;
+        //executableAddress = _executableAddress;
         governanceAddress = _governanceAddress;
     }
 
@@ -365,10 +366,25 @@ contract APM is IAPM, APMExecutable {
         address tokenAddress,
         uint256 amount
     ) external {
-        require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
+        require(msg.sender == bankAddress || msg.sender == governanceAddress /*|| msg.sender == stakingAddress*/, "APM: Not Authorised");
         // transfer
         IERC20(tokenAddress).safeTransfer(_to, amount);
         // update getReserves
         _updateWhenRemoveLiquidity(amount, tokenAddress);
+    }
+
+    /*function removeLiquidityInsidePool(
+        address _to,
+        address tokenA,
+        address tokenB,
+        uint256 amountA
+    ) external {
+        updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
+        IERC20(tokenA).safeTransfer(_to, amountA);
+    }*/
+
+    function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) public {
+        require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
+        _updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
     }
 }

@@ -19,5 +19,8 @@ contract DBIT is ERC20, Ownable {
         return 0;
     }
 
+    function burn(address _from, uint amount) external {
+        _burn(_from, amount);
+    }
 
 }
