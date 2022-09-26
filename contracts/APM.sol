@@ -16,21 +16,23 @@ pragma solidity ^0.8.0;
 import "./interfaces/IAPM.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@debond-protocol/debond-governance-contracts/utils/GovernanceOwnable.sol";
+import "@debond-protocol/debond-governance-contracts/utils/ExecutableOwnable.sol";
 
 
-contract APM is IAPM, GovernanceOwnable {
+contract APM is IAPM, ExecutableOwnable {
     using SafeERC20 for IERC20;
 
     address bankAddress;
+    address stakingDebondAddress;
 
     mapping(address => uint256) internal totalReserve;
     mapping(address => uint256) internal totalEntries; //Entries : virtual liquidity pool
     mapping(address => mapping(address => uint256)) entries;
 
-    constructor(address _governanceAddress, address _bankAddress) GovernanceOwnable(_governanceAddress)
+    constructor(address _executableAddress, address _bankAddress, address _stakingDebondAddress) ExecutableOwnable(_executableAddress)
     {
         bankAddress = _bankAddress;
+        stakingDebondAddress = _stakingDebondAddress;
     }
 
     modifier onlyBank() {
@@ -38,7 +40,7 @@ contract APM is IAPM, GovernanceOwnable {
         _;
     }
 
-    function updateBankAddress(address _bankAddress) external onlyGovernance {
+    function updateBankAddress(address _bankAddress) external onlyExecutable {
         require(_bankAddress != address(0), "APM: Address 0 given for Bank!");
         bankAddress = _bankAddress;
     }
@@ -318,7 +320,7 @@ contract APM is IAPM, GovernanceOwnable {
         address tokenAddress,
         uint256 amount
     ) external {
-        require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
+        require(msg.sender == bankAddress || msg.sender == stakingDebondAddress, "APM: Not Authorised");
         // transfer
         IERC20(tokenAddress).safeTransfer(_to, amount);
         // update getReserves
