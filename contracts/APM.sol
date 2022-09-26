@@ -64,6 +64,7 @@ contract APM is IAPM, APMExecutable {
     mapping(address => mapping(address => uint256)) entries;
 
     //debugging functions
+    /*
     function getTotalReserve(address tokenAddress) public view returns (uint256 totalReserves) {
         totalReserves = totalReserve[tokenAddress];
     }
@@ -72,7 +73,7 @@ contract APM is IAPM, APMExecutable {
     }
     function getEntries(address tokenA, address tokenB) public view returns (uint256 entriesTokens) {
         entriesTokens = entries[tokenA][tokenB];
-    }
+    }*/
 
     constructor(address _governanceAddress, address _bankAddress/*, address _executableAddress*/)
     {
@@ -373,15 +374,15 @@ contract APM is IAPM, APMExecutable {
         _updateWhenRemoveLiquidity(amount, tokenAddress);
     }
 
-    /*function removeLiquidityInsidePool(
+    function removeLiquidityInsidePool(
         address _to,
         address tokenA,
         address tokenB,
         uint256 amountA
     ) external {
-        updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
         IERC20(tokenA).safeTransfer(_to, amountA);
-    }*/
+        updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
+    }
 
     function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) public {
         require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");

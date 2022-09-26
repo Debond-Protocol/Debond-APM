@@ -103,24 +103,7 @@ contract('APM', async (accounts: string[]) => {
         expect(dbitBalance).to.equal('10000');
     })
 
-    it('remove inside pool', async () => {
-        const t1 = await apmContract.getTotalReserve(usdcContract.address)
-        const t2 = await apmContract.getTotalReserve(usdtContract.address)
-        const t3 = await apmContract.getTotalReserve(dbitContract.address)
-        console.log(t1.toString(), t2.toString(), t3.toString())
-
-        const p1 = await apmContract.getTotalEntries(usdcContract.address)
-        const p2 = await apmContract.getTotalEntries(usdtContract.address)
-        const p3 = await apmContract.getTotalEntries(dbitContract.address)
-        console.log(p1.toString(), p2.toString(), p3.toString())
-
-        const e1 = await apmContract.getEntries(usdcContract.address, dbitContract.address)
-        const e2 = await apmContract.getEntries(dbitContract.address, usdcContract.address)
-        console.log(e1.toString(), e2.toString())
-
-        const ea = await apmContract.getEntries(usdtContract.address, dbitContract.address)
-        const eb = await apmContract.getEntries(dbitContract.address, usdtContract.address)
-        console.log(ea.toString(), eb.toString())
+    it('remove inside pool 1', async () => {
 
 
 
@@ -136,5 +119,28 @@ contract('APM', async (accounts: string[]) => {
         console.log("here we print r0 : " +  p[0].toString(),"here we print r1 :" + p[1].toString());
         const d = await apmContract.getReserves(usdcContract.address, dbitContract.address);
         console.log("here we print r0 : " +  d[0].toString(),"here we print r1 :" + d[1].toString());
+
+        expect(p[1].toString()).to.equal('9970')
+    })
+
+    it('remove inside pool 2', async () => {
+
+
+
+        const s = await apmContract.getReserves(usdtContract.address, dbitContract.address);
+        console.log("here we print r0 : " +  s[0].toString(),"here we print r1 :" + s[1].toString());
+        const r = await apmContract.getReserves(usdcContract.address, dbitContract.address);
+        console.log("here we print r0 : " +  r[0].toString(),"here we print r1 :" + r[1].toString());
+
+
+        await apmContract.removeLiquidityInsidePool(bankAddress,  dbitContract.address, usdtContract.address, 30, {from : bankAddress});
+
+        const p = await apmContract.getReserves(usdtContract.address, dbitContract.address);
+        console.log("here we print r0 : " +  p[0].toString(),"here we print r1 :" + p[1].toString());
+        const d = await apmContract.getReserves(usdcContract.address, dbitContract.address);
+        console.log("here we print r0 : " +  d[0].toString(),"here we print r1 :" + d[1].toString());
+
+        expect(p[1].toString()).to.equal('9940')
+
     })
 });
