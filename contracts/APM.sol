@@ -36,17 +36,6 @@ contract APM is IAPM, ExecutableOwnable {
         stakingDebondAddress = _stakingDebondAddress;
     }
 
-    //debugging functions
-    function getTotalReserve(address tokenAddress) public view returns (uint256 totalReserves) {
-        totalReserves = totalReserve[tokenAddress];
-    }
-    function getTotalEntries(address tokenAddress) public view returns (uint256 totalEntriesToken) {
-        totalEntriesToken = totalEntries[tokenAddress];
-    }
-    function getEntries(address tokenA, address tokenB) public view returns (uint256 entriesTokens) {
-        entriesTokens = entries[tokenA][tokenB];
-    }
-
     modifier onlyBank() {
         require(msg.sender == bankAddress, "APM: Not Authorised");
         _;
@@ -337,6 +326,16 @@ contract APM is IAPM, ExecutableOwnable {
         IERC20(tokenAddress).safeTransfer(_to, amount);
         // update getReserves
         _updateWhenRemoveLiquidity(amount, tokenAddress);
+    }
+
+    function removeLiquidityInsidePool(
+        address _to,
+        address tokenA,
+        address tokenB,
+        uint256 amountA
+    ) external {
+        IERC20(tokenA).safeTransfer(_to, amountA);
+        updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
     }
 
     function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) public {
