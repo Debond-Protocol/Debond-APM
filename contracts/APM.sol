@@ -16,28 +16,70 @@ pragma solidity ^0.8.0;
 import "./interfaces/IAPM.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "debond-governance-contracts/contracts/utils/GovernanceOwnable.sol";
+import "@debond-protocol/debond-governance-contracts/utils/GovernanceOwnable.sol";
+import "@debond-protocol/debond-token-contracts/interfaces/IDebondToken.sol";
 
-contract APM is IAPM, GovernanceOwnable {
+interface IUpdatable {
+    function updateGovernance(
+        address _governanceAddress
+    ) external;
 
-    using SafeERC20 for IERC20;
-    mapping(address => uint256) internal totalReserve;
-    mapping(address => uint256) internal totalEntries; //Entries : virtual liquidity pool
-    mapping(address => mapping( address => uint) ) entries;
-    address bankAddress;
+    function updateBank(
+        address _bankAddress
+    ) external;
+}
 
-    /**
-    struct for initializing the add/ remove liquidity operations.
-    added to avoid the stack insignificant error.
-     */
-    struct UpdateData { 
-        uint amountA;
-        uint amountB;
-        address tokenA;
-        address tokenB;
+abstract contract APMExecutable is IUpdatable {
+    address governanceAddress;
+    address executableAddress;
+    address bankAddress; 
+
+    modifier onlyExec {
+        require(msg.sender == executableAddress, "APM: only exec");
+        _;
+    }
+    modifier onlyGovernance {
+        require(msg.sender == governanceAddress, "APM : only gov");
+        _;
     }
 
-    constructor(address _governanceAddress) GovernanceOwnable(_governanceAddress) {}
+    function updateGovernance(
+        address _governanceAddress
+    ) external onlyExec {
+        governanceAddress = _governanceAddress;
+    }
+    
+    function updateBank(
+        address _bankAddress
+    ) external onlyExec {
+        bankAddress = _bankAddress;
+    }
+}
+
+contract APM is IAPM, APMExecutable {
+    using SafeERC20 for IERC20;
+
+    mapping(address => uint256) internal totalReserve;
+    mapping(address => uint256) internal totalEntries; //Entries : virtual liquidity pool
+    mapping(address => mapping(address => uint256)) entries;
+
+    //debugging functions
+    function getTotalReserve(address tokenAddress) public view returns (uint256 totalReserves) {
+        totalReserves = totalReserve[tokenAddress];
+    }
+    function getTotalEntries(address tokenAddress) public view returns (uint256 totalEntriesToken) {
+        totalEntriesToken = totalEntries[tokenAddress];
+    }
+    function getEntries(address tokenA, address tokenB) public view returns (uint256 entriesTokens) {
+        entriesTokens = entries[tokenA][tokenB];
+    }
+
+    constructor(address _governanceAddress, address _bankAddress/*, address _executableAddress*/)
+    {
+        bankAddress = _bankAddress;
+        //executableAddress = _executableAddress;
+        governanceAddress = _governanceAddress;
+    }
 
     modifier onlyBank() {
         require(msg.sender == bankAddress, "APM: Not Authorised");
@@ -49,179 +91,291 @@ contract APM is IAPM, GovernanceOwnable {
         bankAddress = _bankAddress;
     }
 
-    function getReservesOneToken(
+    function _getReservesOneToken(
         address tokenA, //token we want to know reserve
         address tokenB //pool associated
-    ) private view returns (uint reserveA) {
-        uint totalEntriesA = totalEntries[tokenA]; //gas saving
-        if( totalEntriesA != 0){
-            uint entriesA = entries[tokenA][tokenB];
-            reserveA = entriesA * totalReserve[tokenA] / totalEntriesA; //use mulDiv?
+    ) private view returns (uint256 reserveA) {
+        uint256 totalEntriesA = totalEntries[tokenA]; //gas saving
+        if (totalEntriesA != 0) {
+            uint256 entriesA = entries[tokenA][tokenB];
+            reserveA = (entriesA * totalReserve[tokenA]) / totalEntriesA; //use mulDiv?
         }
     }
 
-    function getReserves(
+    /**
+    * @notice know the reserve for a pair (see white paper to know how it works)
+    * @param tokenA address of tokenA
+    * @param tokenB address of tokenB
+    **/
+    function getReserves(address tokenA, address tokenB)
+        public
+        view
+        override
+        returns (uint256 reserveA, uint256 reserveB)
+    {
+        (reserveA, reserveB) = (
+            _getReservesOneToken(tokenA, tokenB),
+            _getReservesOneToken(tokenB, tokenA)
+        );
+    }
+
+    function _updateWhenAddLiquidityOneToken(
+        uint256 amountA,
         address tokenA,
         address tokenB
-    ) public override view returns (uint reserveA, uint reserveB) {
-        (reserveA, reserveB) = (getReservesOneToken(tokenA, tokenB), getReservesOneToken(tokenB, tokenA) );
-    }
-    function updateWhenAddLiquidityOneToken(
-        uint amountA,
-        address tokenA,
-        address tokenB) private {
+    ) private {
 
-        UpdateData memory updateData;
-        updateData.amountA = amountA;
-        updateData.tokenA = tokenA;
-        updateData.tokenB = tokenB;
+        uint256 totalReserveA = totalReserve[tokenA]; //todo : should be put totalreserve[tokenA] or IERC20(tokenA).balanceOf(address(this))? No : totalReserve[A] is old reserve while balanceOf is current reserve
 
-        uint totalReserveA = totalReserve[updateData.tokenA];//gas saving
-
-        if(totalReserveA != 0){
+        if (totalReserveA != 0) {
             //update entries
-            uint oldEntriesA = entries[tokenA][tokenB];  //for updating total Entries
-            uint totalEntriesA = totalEntries[updateData.tokenA]; //save gas
+            uint256 oldEntriesA = entries[tokenA][tokenB]; //for updating total Entries
+            uint256 totalEntriesA = totalEntries[tokenA]; //save gas
 
-            uint entriesA = entriesAfterAddingLiq(oldEntriesA, updateData.amountA, totalEntriesA, totalReserveA);
+            uint256 entriesA = _entriesAfterAddingLiq(
+                oldEntriesA,
+                amountA,
+                totalEntriesA,
+                totalReserveA
+            );
             entries[tokenA][tokenB] = entriesA;
 
             //update total Entries
-            totalEntries[updateData.tokenA] = totalEntriesA - oldEntriesA + entriesA;
-        }
-        else {
+            totalEntries[tokenA] =
+                totalEntriesA -
+                oldEntriesA +
+                entriesA;
+        } else {
             entries[tokenA][tokenB] = amountA;
-            totalEntries[updateData.tokenA] = updateData.amountA;
+            totalEntries[tokenA] = amountA;
         }
-        totalReserve[updateData.tokenA] = totalReserveA + updateData.amountA;
+        sync(tokenA);
+        //totalReserve[tokenA] = totalReserveA + amountA;  //we replaced this by sync
     }
+
+    /**
+    * @notice update reserves when a pair is added in the apm
+    * @param amountA amount of tokenA
+    * @param amountB amount of tokenB
+    * @param tokenA address of tokenA
+    * @param tokenB address of tokenB
+    **/
     function updateWhenAddLiquidity(
-        uint amountA,
-        uint amountB,
+        uint256 amountA,
+        uint256 amountB,
         address tokenA,
-        address tokenB) external onlyBank { 
-        updateWhenAddLiquidityOneToken(amountA, tokenA, tokenB);
-        updateWhenAddLiquidityOneToken(amountB, tokenB, tokenA);
+        address tokenB
+    ) external onlyBank {
+        _updateWhenAddLiquidityOneToken(amountA, tokenA, tokenB);
+        _updateWhenAddLiquidityOneToken(amountB, tokenB, tokenA);
     }
-    function updateWhenRemoveLiquidityOneToken(
-        uint amountA,
+
+    function _updateWhenRemoveLiquidityOneToken(
+        uint256 amountA,
         address tokenA,
-        address tokenB) private {
-        UpdateData memory updateData;
-        updateData.amountA = amountA;
-        updateData.tokenA = tokenA;
-        updateData.tokenB = tokenB;
+        address tokenB
+    ) private {
 
-        uint totalReserveA = totalReserve[updateData.tokenA];//gas saving
+        uint256 totalReserveA = totalReserve[tokenA]; //gas saving
 
-        if(totalReserveA != 0){
-            //update Entries
-            uint oldEntriesA = entries[tokenA][tokenB];  //for updating total entries
-            uint totalEntriesA = totalEntries[updateData.tokenA]; //save gas
 
-            uint entriesA = entriesAfterRemovingLiq(oldEntriesA, updateData.amountA, totalEntriesA, totalReserveA);
-            entries[tokenA][tokenB] = entriesA;
+        //update Entries
+        uint256 oldEntriesA = entries[tokenA][tokenB]; //for updating total entries
+        uint256 totalEntriesA = totalEntries[tokenA]; //save gas
 
-            //update total Entries
-            totalEntries[updateData.tokenA] = totalEntriesA - oldEntriesA + entriesA;
-        }
-        else {
-            entries[tokenA][tokenB] = amountA;
-            totalEntries[updateData.tokenA] = updateData.amountA;
-        }
-        totalReserve[updateData.tokenA] = totalReserveA - updateData.amountA;
+        uint256 entriesA = _entriesAfterRemovingLiq(
+            oldEntriesA,
+            amountA,
+            totalEntriesA,
+            totalReserveA
+        );
+        entries[tokenA][tokenB] = entriesA;
+
+        //update total Entries
+        totalEntries[tokenA] =
+            totalEntriesA -
+            oldEntriesA +
+            entriesA;
+
+        //update total Reserve
+        //totalReserve[tokenA] = totalReserveA -  amountA; //we replaced this by sync
+        sync(tokenA);
     }
-    function updateWhenRemoveLiquidity(
-        uint amount, //amountA is the amount of tokenA removed in total pool reserve ( so not the total amount of tokenA in total pool reserve)
-        address token) public {
-        require(msg.sender == bankAddress, "APM: Not Authorised");
 
+    /**
+    * @notice update reserves when one token is removed from apm
+    * @param amount amount of token
+    * @param token address of token
+    **/
+    function _updateWhenRemoveLiquidity(
+        uint256 amount, //amountA is the amount of tokenA removed in total pool reserve ( so not the total amount of tokenA in total pool reserve)
+        address token
+    ) private {
         totalReserve[token] -= amount;
     }
-    function updateWhenSwap(
-        uint amountAAdded, //amountA is the amount of tokenA swapped in this pool ( so not the total amount of tokenA in this pool after the swap)
-        uint amountBWithdrawn,
+
+    /**
+    * @notice update reserves when one token is swapped for another one
+    * @param amountAAdded amount of tokenA the user gives to the apm
+    * @param amountBWithdrawn amount of tokenB the user gets from the apm
+    * @param tokenA address of tokenA
+    * @param tokenB address of tokenB
+    **/
+    function _updateWhenSwap(
+        uint256 amountAAdded, //amountA is the amount of tokenA swapped in this pool ( so not the total amount of tokenA in this pool after the swap)
+        uint256 amountBWithdrawn,
         address tokenA,
-        address tokenB) private {
-
-        updateWhenAddLiquidityOneToken(amountAAdded, tokenA, tokenB);
-        updateWhenRemoveLiquidityOneToken(amountBWithdrawn, tokenB, tokenA);
-    }
-    function entriesAfterAddingLiq(uint oldEntries, uint amount, uint totalEntriesToken, uint totalReserveToken) public pure returns (uint newEntries) {
-        newEntries = oldEntries + amount * totalEntriesToken / totalReserveToken;
-    }
-    function entriesAfterRemovingLiq(uint oldEntries, uint amount, uint totalEntriesToken, uint totalReserveToken) public pure returns (uint newEntries) {
-        newEntries = oldEntries - amount * totalEntriesToken / totalReserveToken;
-    }
-    struct SwapData { //to avoid stack too deep error
-        uint totalReserve0;
-        uint totalReserve1;
-        uint currentReserve0;
-        uint currentReserve1;
-        uint amount0In;
-        uint amount1In;
+        address tokenB
+    ) private {
+        _updateWhenAddLiquidityOneToken(amountAAdded, tokenA, tokenB);
+        _updateWhenRemoveLiquidityOneToken(amountBWithdrawn, tokenB, tokenA);
     }
 
-    uint private unlocked = 1; //reentracy
-    function swap(uint amount0Out, uint amount1Out,address token0, address token1, address to) external { //no need to have both amount >0, there is always one equals to 0 (according to yu).
-        require(unlocked == 1, 'APM swap: LOCKED');
+    function _entriesAfterAddingLiq(
+        uint256 oldEntries,
+        uint256 amount,
+        uint256 totalEntriesToken,
+        uint256 totalReserveToken
+    ) private pure returns (uint256 newEntries) {
+        newEntries =
+            oldEntries +
+            (amount * totalEntriesToken) /
+            totalReserveToken;
+    }
+
+    function _entriesAfterRemovingLiq(
+        uint256 oldEntries,
+        uint256 amount,
+        uint256 totalEntriesToken,
+        uint256 totalReserveToken
+    ) private pure returns (uint256 newEntries) {
+        newEntries =
+            oldEntries -
+            (amount * totalEntriesToken) /
+            totalReserveToken;
+    }
+
+    uint256 private unlocked = 1; //reentracy
+
+
+    /**
+    * @notice swap one token for another. This is a low level functions which should be called trough the BankRouter
+    * @param amount0Out amount of token0 the user gives to the apm
+    * @param amount1Out amount of token1 the user gets back from the apm
+    * @param token0 address of token0
+    * @param token1 address of token1
+    * @param to address to send token1
+    */
+    function swap(
+        uint256 amount0Out,
+        uint256 amount1Out,
+        address token0,
+        address token1,
+        address to
+    ) external {
+        //no need to have both amount >0, there is always one equals to 0 (according to yu).
+        require(unlocked == 1, "APM swap: LOCKED");
         unlocked = 0;
-        require( (amount0Out != 0 && amount1Out == 0)|| (amount0Out == 0 && amount1Out != 0), 'APM swap: INSUFFICIENT_OUTPUT_AMOUNT_Or_Both_output >0');
-        require(to != token0 && to != token1, 'APM swap: INVALID_TO'); // do we really need this?
-        (uint _reserve0, uint _reserve1) = getReserves(token0, token1); // gas savings
-        require(amount0Out < _reserve0 && amount1Out < _reserve1, 'APM swap: INSUFFICIENT_LIQUIDITY');
+        require(
+            (amount0Out != 0 && amount1Out == 0) ||
+            (amount0Out == 0 && amount1Out != 0),
+            "APM swap: INSUFFICIENT_OUTPUT_AMOUNT_Or_Both_output >0"
+        );
+        require(to != token0 && to != token1, "APM swap: INVALID_TO"); // do we really need this?
+        (uint256 _reserve0, uint256 _reserve1) = getReserves(token0, token1); // gas savings
+        require(
+            amount0Out < _reserve0 && amount1Out < _reserve1,
+            "APM swap: INSUFFICIENT_LIQUIDITY"
+        );
 
-        if (amount0Out == 0) IERC20(token1).transfer(to, amount1Out);
-        else IERC20(token0).transfer(to, amount0Out);
+        if (amount0Out == 0) IERC20(token1).safeTransfer(to, amount1Out);
+        else IERC20(token0).safeTransfer(to, amount0Out);
 
-        SwapData memory swapData;
+         uint totalReserve0 = IERC20(token0).balanceOf(address(this));
+         uint totalReserve1 = IERC20(token1).balanceOf(address(this));
+         uint currentReserve0 =
+            _reserve0 +
+            totalReserve0 -
+            totalReserve[token0]; // should be >= 0
+         uint currentReserve1 =
+            _reserve1 +
+            totalReserve1 -
+            totalReserve[token1];
+        require(
+            currentReserve0 * currentReserve1 >=
+            _reserve0 * _reserve1,
+            "APM swap: K"
+        );
 
-        swapData.totalReserve0 = IERC20(token0).balanceOf(address(this));
-        swapData.totalReserve1 = IERC20(token1).balanceOf(address(this));
-        swapData.currentReserve0 = _reserve0 + swapData.totalReserve0 - totalReserve[token0]; // should be >= 0
-        swapData.currentReserve1 = _reserve1 + swapData.totalReserve1 - totalReserve[token1];
-        require(swapData.currentReserve0 * swapData.currentReserve1 >= _reserve0 * _reserve1, 'APM swap: K');
-
-        swapData.amount0In = swapData.currentReserve0 > _reserve0 - amount0Out ? swapData.currentReserve0 - (_reserve0 - amount0Out) : 0;
-        swapData.amount1In = swapData.currentReserve1 > _reserve1 - amount1Out ? swapData.currentReserve1 - (_reserve1 - amount1Out) : 0;
-        require(swapData.amount0In > 0 || swapData.amount1In > 0, 'APM swap: INSUFFICIENT_INPUT_AMOUNT');
+         uint amount0In = currentReserve0 > _reserve0 - amount0Out
+            ? currentReserve0 - (_reserve0 - amount0Out)
+            : 0;
+         uint amount1In = currentReserve1 > _reserve1 - amount1Out
+            ? currentReserve1 - (_reserve1 - amount1Out)
+            : 0;
+        require(
+            amount0In > 0 || amount1In > 0,
+            "APM swap: INSUFFICIENT_INPUT_AMOUNT"
+        );
         if (amount0Out == 0) {
-            updateWhenSwap(swapData.amount0In, amount1Out, token0, token1);
-        }
-        else {
-            updateWhenSwap(swapData.amount1In, amount0Out, token1, token0);
+            _updateWhenSwap(amount0In, amount1Out, token0, token1);
+        } else {
+            _updateWhenSwap(amount1In, amount0Out, token1, token0);
         }
         unlocked = 1;
     }
 
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
-    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {
-        require(amountIn > 0, 'APM: INSUFFICIENT_INPUT_AMOUNT');
-        require(reserveIn > 0 && reserveOut > 0, 'APM: INSUFFICIENT_LIQUIDITY');
-        uint numerator = amountIn * reserveOut;
-        uint denominator = reserveIn + amountIn;
+    function _getAmountOut(
+        uint256 amountIn,
+        uint256 reserveIn,
+        uint256 reserveOut
+    ) internal pure returns (uint256 amountOut) {
+        require(amountIn > 0, "APM: INSUFFICIENT_INPUT_AMOUNT");
+        require(reserveIn > 0 && reserveOut > 0, "APM: INSUFFICIENT_LIQUIDITY");
+        uint256 numerator = amountIn * reserveOut;
+        uint256 denominator = reserveIn + amountIn;
         amountOut = numerator / denominator;
     }
 
-    function getAmountsOut(uint amountIn, address[] memory path) external view returns (uint[] memory amounts) {
-        require(path.length >= 2, 'APM: INVALID_PATH');
-        
-        amounts = new uint[](path.length);
-
+    function getAmountsOut(uint256 amountIn, address[] memory path)
+        external
+        view
+        returns (uint256[] memory amounts)
+    {
+        require(path.length >= 2, "APM: INVALID_PATH");
+        amounts = new uint256[](path.length);
         amounts[0] = amountIn;
-        for (uint i; i < path.length - 1; i++) {
-            (uint reserveIn, uint reserveOut) = getReserves(path[i], path[i + 1]);
-            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
+        for (uint256 i; i < path.length - 1; i++) {
+            (uint256 reserveIn, uint256 reserveOut) = getReserves(
+                path[i],
+                path[i + 1]
+            );
+            amounts[i + 1] = _getAmountOut(amounts[i], reserveIn, reserveOut);
         }
     }
 
+    
+    // force reserves to match balances
+    function sync(address tokenAddress) public {
+        totalReserve[tokenAddress] = IERC20(tokenAddress).balanceOf(address(this));
+    }
 
-    // Bank Access
-    function removeLiquidity(address _to, address tokenAddress, uint amount) external onlyBank {
-        // withdraws the token from the APM.
+    function removeLiquidity(
+        address _to,
+        address tokenAddress,
+        uint256 amount
+    ) external {
+        require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
+        // transfer
         IERC20(tokenAddress).safeTransfer(_to, amount);
-        // update getReserves  in order to stablise the VLP.
-        updateWhenRemoveLiquidity(amount, tokenAddress);
+        // update getReserves
+        _updateWhenRemoveLiquidity(amount, tokenAddress);
+    }
+
+
+    function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) public {
+        require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
+        _updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
     }
 }
-

@@ -40,19 +40,21 @@ interface IAPM {
         address _tokenB) external;
 
      /**
-    updates the composition of the VLP after adding liquidity.
+    updates the composition of the VLP after adding liquidity for the only given underlying collateral.
     @dev only callable by bank contract.
     @param amount is the amount of tokens removed of the given token from the whole VLP.
     @param token is the address of the token for which you want to update the amount.
      */
-    function updateWhenRemoveLiquidity(
+    function updateWhenRemoveLiquidityForOneToken(
         uint amount, 
         address token) external;
 
     /**
     executes the swap operation to swap the amounts present in VLP pool pairs.
     @param amount0Out is the residual amount of the token0 that is not swapped (and returned to user).
-    @param amount1Out is the swapped amount from amount0Out , token0 in order to fetch the results. 
+    @param amount1Out is the fixed swapped amount needed for arbitrary amounnt of conversion of amount0Out   . 
+    @param token0 address of collateral of which the 
+
      */
     function swap(uint amount0Out, uint amount1Out,address token0, address token1, address to) external;
 

@@ -3,7 +3,6 @@ const HDWalletProvider = require("@truffle/hdwallet-provider");
 require('dotenv').config();
 const Web3 = require("web3");
 const web3 = new Web3();
-
 module.exports = {
   plugins: ['truffle-plugin-verify'],
   api_keys: {
@@ -16,6 +15,7 @@ module.exports = {
       network_id: "*",
       gas: 3500000
     },
+    docgen: {},
     rinkeby: {
       provider: function() {
         return new HDWalletProvider(process.env.TESTNET_PRIVATE_KEY, `https://rinkeby.infura.io/v3/${process.env.INFURA_Access_Token}`);
