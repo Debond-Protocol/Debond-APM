@@ -1,18 +1,19 @@
 ## Debond-APM.
 ### About: 
 
-This module consist of smart contract for Automated Pair Maker, which acts as the single consolidated pool for ERC20 tokens represented by bonds whenever they are issued/ redeemed. It manages the liquidity of the  different bond pairs internally (called as virtual liquidity pool) rather than issuing separate contracts each time the LP is created.
+This module consist of smart contract for Automated Pair Maker, which represents the contribution of the liquidity as a single bond and maintained using the mapping of the amount of the different liquidity pair(called as virtual LP pair).
 
 The addition/removal of the liquidity of the pool (done via bank),after they are issued the bond defining the transaction. Along with that it also allows swaps between the different virtual pool pairs between the bond,nonce classes being validated (as purchaseable) by the banks.
 
-### uses:
+### Users:
 
-- Bond issuer contract (ie bank) who want to submit the liquidity to the APM and then issue the bond.
+- Bond-Issuer(Bank): who want to submit the liquidity to the APM and in lieu of that issue the bond.
 
-- governance contract that wants to transfer the unlocked supply to the whitelisted address (allocatedToken).
+- Governance contract: that wants to transfer the unlocked supply to the other contracts/whitelisted address.
 
+- Exchange contract: for adding the liquidity of the bond contract for the secondary market. 
 
-##  contract description: 
+##  Contract description: 
 
 [APM.sol](./contracts/APM.sol) consist of the following storage mapping:
 
@@ -93,22 +94,35 @@ interface IAPM {
 
 ```
 
+## Diagram:
 
-## Development workflow: 
+<img src="./contracts/APM.sol"> </img>
 
-1. Bank contract calls the `APMRouter.UpdateWhenAddLiquidity/APMRouter.RemoveLiquidity` or  `swapTokensForExactTokens` function to manage the operations like addLiquidity when issed bond, removingLiquidity for 
 
-2.Then internally it calls the  `APM.updateWhenAddLiquidityOneToken() / updateLiquidity()` (based on the type of bond added) function that checks whether there is LP available there, if not it initializes the pair and then updates the liquidity of the virtual pair as well as the whole pool.
+
+## Potential Functioning: 
+
+1. Once the Debond-Bank/Bank.sol calls the buying/staking functions (ie issuing of bonds), internally it calls the bankRouter contract functions that will be  providing the interface for APM to add the liquidity from one token bond pair at a time. 
+
+2.  `BankRouter.UpdateWhenAddLiquidity/APMRouter.RemoveLiquidity` or  `swapTokensForExactTokens` function to  then maange the change of the ratio of liquidity.
 
 3. Similarly during the redemption of the bond: the  UI  interacts with the Bank.redeem..with..() to redeem the bonds (via burning) along with internally calling the `APMRouter.updateWhenRemoveLiquidityOneToken() / updateliquidity()` function that will be updating the overall liquidity along with the VLP.
 
 ### Security consideration.
+
 **NOTE:Anyone can put the liquidity in the APM without going through the traditional process of issuing bonds on the bank, its MUST NOT be followed as you will LOOSE THE FUNDS as there are no methods to remove liquidity unless users via banks have to redeem the bond corresponding to liquidity**
+
+
+- Also the LP should insure the necessary funds should be managed for the less riskier asset class. this in the debond case is implemented by providing floating rate(high risk bonds) but this needs to be managed on higher level
+
+
+- Also the core functions of APM (add/removeLiquidity and updateWhenRemoveLiquidityOneToken and other state changing functions are called).
 
 ## reports: 
 1.[markdown report for functions](./docs/APM_report.md).
 2.[dependency graph](./docs/APM.png).
 3.[APM functioning graph](./docs/APM-graph.png)
+
 
 ### deployment steps : 
 1. Add private key info in the .env file (having permissions of the governance) and the settings of RPC provider for the deployment.
@@ -117,6 +131,5 @@ interface IAPM {
 ```bash
 > truffle deploy deploy/3_deploy_contract.js.
 ```
-3. Then set the corresponding address of dependency `APMRouter`,  `Bank`, `Bond` and `Governance` address (either using etherscan or writing the scripts). 
-
+3. Then set the corresponding address of dependency `BankRouter`,  `Bank`, `Bond` and `Governance` address (either using etherscan or writing the scripts). 
 
