@@ -16,6 +16,8 @@ pragma solidity ^0.8.0;
 
 interface IAPM {
 
+    function updateBankAddress(address _bankAddress) external;
+
     function getReserves(address tokenA, address tokenB) external view returns (uint reserveA, uint reserveB);
 
     function updateWhenAddLiquidity(
@@ -38,10 +40,4 @@ interface IAPM {
     ) external;
 
     function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) external;
-
-//    function getTotalReserve(address tokenAddress) external view returns (uint256 totalReserves);
-//
-//    function getTotalEntries(address tokenAddress) external view returns (uint256 totalEntriesToken);
-//    function getEntries(address tokenA, address tokenB) external view returns (uint256 entriesTokens);
-
 }

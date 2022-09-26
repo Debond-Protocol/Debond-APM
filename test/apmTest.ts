@@ -16,7 +16,7 @@ contract('APM', async (accounts: string[]) => {
     let usdtContract: USDTInstance
     let dbitContract: DBITInstance
     let apmContract : APMInstance
-    const [governanceAddress, bankAddress] = accounts;
+    const [executableAddress, bankAddress, stakingDebondAddress] = accounts;
 
     before('Initialisation', async () => {
         usdcContract = await USDC.deployed();
@@ -63,7 +63,7 @@ contract('APM', async (accounts: string[]) => {
         const s = await apmContract.getReserves(usdcContract.address, dbitContract.address);
         console.log("here we print r0 before remove : " +  s[0].toString(),"here we print r1 before remove : " + s[1].toString());
 
-        await apmContract.removeLiquidity(accounts[3],  dbitContract.address, 5000, {from: governanceAddress});
+        await apmContract.removeLiquidity(accounts[3],  dbitContract.address, 5000, {from: stakingDebondAddress});
 
         const r = await apmContract.getReserves(usdcContract.address, dbitContract.address);
         console.log("here we print r0 after remove : " +  r[0].toString(),"here we print r1 after remove : " + r[1].toString());

@@ -16,70 +16,24 @@ pragma solidity ^0.8.0;
 import "./interfaces/IAPM.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@debond-protocol/debond-governance-contracts/utils/GovernanceOwnable.sol";
+import "@debond-protocol/debond-governance-contracts/utils/ExecutableOwnable.sol";
 import "@debond-protocol/debond-token-contracts/interfaces/IDebondToken.sol";
 
-interface IUpdatable {
-    function updateGovernance(
-        address _governanceAddress
-    ) external;
 
-    function updateBank(
-        address _bankAddress
-    ) external;
-}
-
-abstract contract APMExecutable is IUpdatable {
-    address governanceAddress;
-    address executableAddress;
-    address bankAddress; 
-
-    modifier onlyExec {
-        require(msg.sender == executableAddress, "APM: only exec");
-        _;
-    }
-    modifier onlyGovernance {
-        require(msg.sender == governanceAddress, "APM : only gov");
-        _;
-    }
-
-    function updateGovernance(
-        address _governanceAddress
-    ) external onlyExec {
-        governanceAddress = _governanceAddress;
-    }
-    
-    function updateBank(
-        address _bankAddress
-    ) external onlyExec {
-        bankAddress = _bankAddress;
-    }
-}
-
-contract APM is IAPM, APMExecutable {
+contract APM is IAPM, ExecutableOwnable {
     using SafeERC20 for IERC20;
+
+    address bankAddress;
+    address stakingDebondAddress;
 
     mapping(address => uint256) internal totalReserve;
     mapping(address => uint256) internal totalEntries; //Entries : virtual liquidity pool
     mapping(address => mapping(address => uint256)) entries;
 
-    //debugging functions
-    /*
-    function getTotalReserve(address tokenAddress) public view returns (uint256 totalReserves) {
-        totalReserves = totalReserve[tokenAddress];
-    }
-    function getTotalEntries(address tokenAddress) public view returns (uint256 totalEntriesToken) {
-        totalEntriesToken = totalEntries[tokenAddress];
-    }
-    function getEntries(address tokenA, address tokenB) public view returns (uint256 entriesTokens) {
-        entriesTokens = entries[tokenA][tokenB];
-    }*/
-
-    constructor(address _governanceAddress, address _bankAddress/*, address _executableAddress*/)
+    constructor(address _executableAddress, address _bankAddress, address _stakingDebondAddress) ExecutableOwnable(_executableAddress)
     {
         bankAddress = _bankAddress;
-        //executableAddress = _executableAddress;
-        governanceAddress = _governanceAddress;
+        stakingDebondAddress = _stakingDebondAddress;
     }
 
     modifier onlyBank() {
@@ -87,7 +41,7 @@ contract APM is IAPM, APMExecutable {
         _;
     }
 
-    function setBankAddress(address _bankAddress) external onlyGovernance {
+    function updateBankAddress(address _bankAddress) external onlyExecutable {
         require(_bankAddress != address(0), "APM: Address 0 given for Bank!");
         bankAddress = _bankAddress;
     }
@@ -367,7 +321,7 @@ contract APM is IAPM, APMExecutable {
         address tokenAddress,
         uint256 amount
     ) external {
-        require(msg.sender == bankAddress || msg.sender == governanceAddress /*|| msg.sender == stakingAddress*/, "APM: Not Authorised");
+        require(msg.sender == bankAddress || msg.sender == stakingDebondAddress, "APM: Not Authorised");
         // transfer
         IERC20(tokenAddress).safeTransfer(_to, amount);
         // update getReserves
@@ -385,7 +339,7 @@ contract APM is IAPM, APMExecutable {
     }
 
     function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) public {
-        require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
+        require(msg.sender == bankAddress, "APM: Not Authorised");
         _updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
     }
 }
