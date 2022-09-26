@@ -17,6 +17,7 @@ import "./interfaces/IAPM.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@debond-protocol/debond-governance-contracts/utils/ExecutableOwnable.sol";
+import "@debond-protocol/debond-token-contracts/interfaces/IDebondToken.sol";
 
 
 contract APM is IAPM, ExecutableOwnable {
@@ -30,6 +31,18 @@ contract APM is IAPM, ExecutableOwnable {
     mapping(address => mapping(address => uint256)) entries;
 
     constructor(address _executableAddress, address _bankAddress, address _stakingDebondAddress) ExecutableOwnable(_executableAddress)
+    //debugging functions
+    function getTotalReserve(address tokenAddress) public view returns (uint256 totalReserves) {
+        totalReserves = totalReserve[tokenAddress];
+    }
+    function getTotalEntries(address tokenAddress) public view returns (uint256 totalEntriesToken) {
+        totalEntriesToken = totalEntries[tokenAddress];
+    }
+    function getEntries(address tokenA, address tokenB) public view returns (uint256 entriesTokens) {
+        entriesTokens = entries[tokenA][tokenB];
+    }
+
+    constructor(address _governanceAddress, address _bankAddress/*, address _executableAddress*/)
     {
         bankAddress = _bankAddress;
         stakingDebondAddress = _stakingDebondAddress;
@@ -325,5 +338,10 @@ contract APM is IAPM, ExecutableOwnable {
         IERC20(tokenAddress).safeTransfer(_to, amount);
         // update getReserves
         _updateWhenRemoveLiquidity(amount, tokenAddress);
+    }
+
+    function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) public {
+        require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
+        _updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
     }
 }
