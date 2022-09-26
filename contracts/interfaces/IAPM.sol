@@ -44,6 +44,7 @@ interface IAPM {
     function getTotalReserve(address tokenAddress) external view returns (uint256 totalReserves);
     
     function getTotalEntries(address tokenAddress) external view returns (uint256 totalEntriesToken);
+
     function getEntries(address tokenA, address tokenB) external view returns (uint256 entriesTokens);
 
 }

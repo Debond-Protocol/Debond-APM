@@ -31,6 +31,11 @@ contract APM is IAPM, ExecutableOwnable {
     mapping(address => mapping(address => uint256)) entries;
 
     constructor(address _executableAddress, address _bankAddress, address _stakingDebondAddress) ExecutableOwnable(_executableAddress)
+    {
+        bankAddress = _bankAddress;
+        stakingDebondAddress = _stakingDebondAddress;
+    }
+
     //debugging functions
     function getTotalReserve(address tokenAddress) public view returns (uint256 totalReserves) {
         totalReserves = totalReserve[tokenAddress];
@@ -40,12 +45,6 @@ contract APM is IAPM, ExecutableOwnable {
     }
     function getEntries(address tokenA, address tokenB) public view returns (uint256 entriesTokens) {
         entriesTokens = entries[tokenA][tokenB];
-    }
-
-    constructor(address _governanceAddress, address _bankAddress/*, address _executableAddress*/)
-    {
-        bankAddress = _bankAddress;
-        stakingDebondAddress = _stakingDebondAddress;
     }
 
     modifier onlyBank() {
@@ -341,7 +340,7 @@ contract APM is IAPM, ExecutableOwnable {
     }
 
     function updateWhenRemoveLiquidityOneToken(uint amountA, address tokenA, address tokenB) public {
-        require(msg.sender == bankAddress || msg.sender == governanceAddress, "APM: Not Authorised");
+        require(msg.sender == bankAddress, "APM: Not Authorised");
         _updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
     }
 }
