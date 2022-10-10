@@ -80,7 +80,7 @@ contract APM is IAPM, ExecutableOwnable {
         address tokenB
     ) private {
 
-        uint256 totalReserveA = totalReserve[tokenA]; //todo : should be put totalreserve[tokenA] or IERC20(tokenA).balanceOf(address(this))? No : totalReserve[A] is old reserve while balanceOf is current reserve
+        uint256 totalReserveA = totalReserve[tokenA]; // should be put totalreserve[tokenA] or IERC20(tokenA).balanceOf(address(this))? No : totalReserve[A] is old reserve while balanceOf is current reserve
 
         if (totalReserveA != 0) {
             //update entries
@@ -334,6 +334,7 @@ contract APM is IAPM, ExecutableOwnable {
         address tokenB,
         uint256 amountA
     ) external {
+        require(msg.sender == bankAddress, "APM: Not Authorised");
         IERC20(tokenA).safeTransfer(_to, amountA);
         updateWhenRemoveLiquidityOneToken(amountA, tokenA, tokenB);
     }
